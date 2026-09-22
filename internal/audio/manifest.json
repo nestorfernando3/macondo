@@ -1,0 +1,92 @@
+{
+  "bienvenida": {
+    "hash": "027c5554b4d1149e",
+    "voz": "gloria",
+    "bytes": 124704
+  },
+  "guia-inicio": {
+    "hash": "65e4d9cf079d4584",
+    "voz": "gloria",
+    "bytes": 78624
+  },
+  "camino-casa": {
+    "hash": "01a300da0c43d4a4",
+    "voz": "gloria",
+    "bytes": 118224
+  },
+  "camino-jardin": {
+    "hash": "fba34a397a5ba963",
+    "voz": "gloria",
+    "bytes": 94464
+  },
+  "camino-puerto": {
+    "hash": "e8f6f2cd5a05ac03",
+    "voz": "gloria",
+    "bytes": 95904
+  },
+  "camino-mirador": {
+    "hash": "54a1f44ed22d7fed",
+    "voz": "gloria",
+    "bytes": 89568
+  },
+  "llegada-casa": {
+    "hash": "97c247ce87116a9f",
+    "voz": "gloria",
+    "bytes": 142416
+  },
+  "llegada-jardin": {
+    "hash": "56bb57e4d0616d2c",
+    "voz": "gloria",
+    "bytes": 150624
+  },
+  "llegada-puerto": {
+    "hash": "55280d0727c1ddf1",
+    "voz": "gloria",
+    "bytes": 121824
+  },
+  "llegada-mirador": {
+    "hash": "89932d92842f616f",
+    "voz": "gloria",
+    "bytes": 171936
+  },
+  "fin-recorrido": {
+    "hash": "36e6517401337aa4",
+    "voz": "gloria",
+    "bytes": 120816
+  },
+  "lectura-memoria": {
+    "hash": "4f5655c9d3de63f2",
+    "voz": "gloria",
+    "bytes": 79776
+  },
+  "lectura-tiempo": {
+    "hash": "cde7e3d65640c0ae",
+    "voz": "gloria",
+    "bytes": 75744
+  },
+  "lectura-espera": {
+    "hash": "dc7fc36d6c5b70bd",
+    "voz": "gloria",
+    "bytes": 73728
+  },
+  "lectura-voz": {
+    "hash": "b8f9f2c75c051775",
+    "voz": "gloria",
+    "bytes": 87984
+  },
+  "lectura-llegada": {
+    "hash": "f55ad9c1c688c493",
+    "voz": "gloria",
+    "bytes": 221328
+  },
+  "lectura-mariposas": {
+    "hash": "9a5032221f7b9ee3",
+    "voz": "gloria",
+    "bytes": 218016
+  },
+  "lectura-tren": {
+    "hash": "f4c18ee606b7a2d4",
+    "voz": "gloria",
+    "bytes": 246528
+  }
+}

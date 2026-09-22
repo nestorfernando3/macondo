@@ -1,0 +1,50 @@
+(node:34450) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ encuentros y rutas referencian registros existentes (0.632375ms)
+✔ migra visitas antiguas y tolera progreso corrupto (0.361334ms)
+✔ interacciones respetan altura y oclusión (0.092791ms)
+✔ el pueblo se construye y se revisa a sí mismo (0.057625ms)
+✔ el suelo del recorrido no da saltos (0.044958ms)
+✔ las alturas del recorrido son las prometidas (0.042542ms)
+✔ el agua no se cruza y el muelle sí (0.046167ms)
+✔ cada encuentro conserva un punto de aproximación libre (0.03875ms)
+✔ los muros tapan la vista y la puerta no (0.0715ms)
+✔ las anclas mandan: el prop y el efecto leen la misma coordenada (0.32675ms)
+✔ toda ancla declarada tiene pieza o se puede construir sin ella (0.167417ms)
+✔ la locomoción sólo obedece en el paseo, y nunca con el recorrido guiando (0.136709ms)
+✔ abrir un panel detiene recorrido, voz y vuelo, y es idempotente (0.045916ms)
+✔ cerrar un panel con otro panel abierto no libera la locomoción (0.058334ms)
+✔ el relato de la llegada retiene «Continuar» y un panel lo cancela (0.063042ms)
+✔ el mirador no ofrece «Continuar» y sin voz la llegada no retiene nada (0.040375ms)
+✔ salir del paseo cancela el recorrido y suelta el vuelo (0.039875ms)
+✔ recorrido y relato rechazan acciones inventadas (0.055042ms)
+✔ historias referencian encuentros y lugares, con efectos cerrados (0.069208ms)
+✔ director invita sin abrir, resuelve idempotente y reemplaza elección (0.130458ms)
+✔ historias restaura y limita escritura, y compone huellas (0.097833ms)
+✔ narración cubre los clips de guía y todas las lecturas, con textos ≤1200 (0.053458ms)
+✔ narrador: reemplazo sin aviso, interrupt silencioso, skip con aviso y apagado (1.188709ms)
+✔ narrador: MP3 ausente libera el flujo y pausa/reanuda el clip (0.182583ms)
+✔ el lecho ambiente calla hasta el gesto, sigue al río y cede ante la voz (0.348917ms)
+✔ los lechos de ambiente están medidos y cierran en bucle (0.497708ms)
+✔ la mariposa conserva su envergadura y sus alas apuntan a lados distintos (0.080709ms)
+✔ el cuerpo es un perfil cerrado y los contornos son finitos (0.069083ms)
+✔ un toque tolera temblor sin girar la cámara (1.336ms)
+✔ arrastrar gira una vez y no produce un destino (0.161667ms)
+✔ W y flecha arriba se liberan de forma independiente (0.106042ms)
+✔ perder foco cancela también el arrastre pendiente (0.087166ms)
+✔ el vuelo rechaza obstáculos y frena sin deriva al detenerse (1.036625ms)
+✔ el vuelo a un punto termina aunque haya una pared intermedia (2.674334ms)
+✔ agua acotada sobre el suelo y gotas dentro de la taza (3.696625ms)
+✔ los seis hallazgos están en puntos libres y se recogen una sola vez (16.933791ms)
+✔ un desplazamiento grande no atraviesa una pared estrecha (0.326167ms)
+✔ los efectos conservan su material personalizado (0.60425ms)
+✔ second package round trips every result without duplicates or untrusted text (0.864958ms)
+✔ second package effects are closed, replaceable and disposable (5.876584ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 96.703541

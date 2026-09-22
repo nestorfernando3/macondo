@@ -1,0 +1,18 @@
+
+> macondo-atlas@0.1.0 build
+> vite build
+
+vite v6.3.6 building for production...
+transforming...
+✓ 45 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   8.96 kB │ gzip:   3.25 kB
+dist/assets/index-Bk05JO3Y.css   15.20 kB │ gzip:   4.02 kB
+dist/assets/index-DxiO5lvx.js   638.77 kB │ gzip: 177.45 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 603ms

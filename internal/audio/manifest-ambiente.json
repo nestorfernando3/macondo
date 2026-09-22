@@ -1,0 +1,26 @@
+{
+  "rio": {
+    "hash": "85d2c1251c0de8b3",
+    "bytes": 192620,
+    "duracion": 24,
+    "rms_dBFS": -21,
+    "pico_dBFS": -12.6,
+    "salto_de_bucle": 0.08702
+  },
+  "viento": {
+    "hash": "fade7bdde93c36f0",
+    "bytes": 240620,
+    "duracion": 30,
+    "rms_dBFS": -23,
+    "pico_dBFS": -10,
+    "salto_de_bucle": 0.0116
+  },
+  "aves": {
+    "hash": "e1563c2669ff98bf",
+    "bytes": 288620,
+    "duracion": 36,
+    "rms_dBFS": -26,
+    "pico_dBFS": -8.1,
+    "salto_de_bucle": 0.04605
+  }
+}

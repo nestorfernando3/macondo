@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#172d3a">
+  <title>Macondo · Un pueblo para recorrer</title>
+</head>
+<body>
+  <div id="scene" aria-hidden="true"></div>
+  <div id="vignette" aria-hidden="true"></div>
+  <header>
+    <a class="brand" href="./">M<span>✳</span></a>
+    <span>MACONDO · UN PUEBLO PARA RECORRER</span>
+    <button id="motion">Pausar movimiento</button>
+  </header>
+  <main>
+    <section class="intro">
+      <p class="eyebrow">LITERATURA QUE SE HABITA</p>
+      <h1>Todo era posible.<br>Incluso lo <em>imposible.</em></h1>
+      <p class="lede">Entra y vuela por un Macondo imaginado:<br>una mariposa amarilla, cinco lugares del realismo mágico<br>seis hallazgos para descubrir<br>y el universo de Gabriel García Márquez.</p>
+      <button class="primary" id="enter">Comenzar recorrido <span>↗</span></button>
+      <button class="secondary" id="skip-flight" hidden>Omitir descenso</button>
+      <p class="hint">Clic para volar hasta un punto · WASD también · Espacio sube, Shift baja · arrastra para girar la cámara</p>
+    </section>
+    <aside class="coordinate">CARIBE IMAGINADO<br><span>Entre la memoria y el asombro</span></aside>
+    <p class="footer">GABRIEL GARCÍA MÁRQUEZ <span>1927 — 2014 · NOBEL 1982</span><span id="progress">0 / 4 lugares explorados</span></p>
+  </main>
+  <!-- HUD del paseo. Con `main` oculto durante el recorrido, este bloque era lo único que
+       quedaba en pie y no era ningún hito: no había forma de saltar a los controles. -->
+  <div id="hud" hidden role="region" aria-label="Paseo por Macondo">
+    <div id="place-name"></div>
+    <p id="journey-status" role="status"></p>
+    <p id="flight-status" role="status"></p>
+    <p id="discovery-toast" role="status"></p>
+    <section id="onboarding" hidden aria-label="Aprende a jugar" aria-live="polite">
+      <small></small><strong></strong><p></p><button>Omitir tutorial</button>
+    </section>
+    <div id="hud-actions">
+      <button id="open-map" aria-haspopup="dialog">Mapa</button>
+      <button id="open-discoveries" aria-haspopup="dialog">Hallazgos 0/6</button>
+      <button id="open-cuaderno" aria-haspopup="dialog">Cuaderno</button>
+      <button id="toggle-tour" aria-pressed="false">Guiarme</button>
+      <button id="audio-voice" aria-pressed="true" title="Activar o silenciar la voz de la guía">Voz</button>
+      <button id="audio-ambient" aria-pressed="false" title="Activar o silenciar el sonido del pueblo: viento, río y aves">Sonido</button>
+      <button id="to-plaza" title="Volver a la plaza">Plaza</button>
+      <button id="take-postcard" title="Descargar una postal de este lugar">Recuerdo</button>
+      <button id="recenter" title="Centrar cámara (R)">Centrar cámara</button>
+      <button id="help-btn" aria-haspopup="dialog">Ayuda</button>
+      <button id="exit-walk">Portada</button>
+    </div>
+    <div id="interact-tip" hidden>
+      <span id="interact-label"></span>
+      <button id="interact-btn">Explorar <kbd>E</kbd></button>
+    </div>
+    <div id="tour-banner" hidden>
+      <span id="tour-msg"></span>
+      <button id="tour-stop">Detener recorrido</button>
+      <button id="tour-continue" hidden>Continuar</button>
+    </div>
+    <div id="altitude" role="group" aria-label="Subir o bajar el vuelo">
+      <button id="fly-up" aria-label="Subir" title="Subir (Espacio)">▲</button>
+      <button id="fly-down" aria-label="Bajar" title="Bajar (Shift)">▼</button>
+    </div>
+    <div id="minimap" aria-hidden="true"><svg viewBox="0 0 80 80"></svg></div>
+    <div id="joystick" aria-hidden="true"><div id="joy-knob"></div></div>
+  </div>
+  <!-- Subtítulos de la voz guía (fuera del HUD: sobrevive a paneles). «Saltar audio» vive
+       aquí con ellos y no en el banner del recorrido: durante la bienvenida —y ante
+       cualquier panel— el HUD entero está oculto, así que allí medía 0 × 0 y la voz no se
+       podía saltar. -->
+  <div id="caption-bar">
+    <p id="caption" role="status" hidden></p>
+    <button id="tour-skip-audio" hidden>Saltar audio</button>
+  </div>
+  <!-- Panel de lectura -->
+  <dialog id="reading" aria-labelledby="reading-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <p class="eyebrow" id="reading-tag"></p>
+    <h2 id="reading-title"></h2>
+    <p id="reading-body"></p>
+    <div class="work" id="reading-work"></div>
+    <p id="reading-conversa" hidden></p>
+    <fieldset id="reading-quiz">
+      <legend id="reading-question"></legend>
+      <div id="answers"></div>
+    </fieldset>
+    <p id="feedback" role="status"></p>
+    <button id="reading-listen" hidden>▶ Escuchar</button>
+    <a id="source" target="_blank" rel="noopener">Explorar la fuente ↗</a>
+  </dialog>
+  <!-- Cuaderno del mirador (escritura final) -->
+  <dialog id="writing" aria-labelledby="writing-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <h2 id="writing-title">Cuaderno del mirador</h2>
+    <label id="writing-prompt" for="writing-field"></label>
+    <textarea id="writing-field" rows="4" maxlength="1200" placeholder="Frase 1…&#10;Frase 2…&#10;Frase 3…"></textarea>
+    <p id="writing-count">Hasta 1200 caracteres. Se guarda en este dispositivo; no se envía.</p>
+    <div class="row">
+      <button id="writing-save">Guardar</button>
+      <button id="writing-copy">Copiar</button>
+      <button id="writing-download">Descargar</button>
+      <span id="writing-status" role="status"></span>
+    </div>
+    <div id="writing-traces" hidden>
+      <p class="eyebrow">Impresiones del paseo</p>
+      <ul id="writing-trace-list"></ul>
+    </div>
+  </dialog>
+  <!-- Escena narrativa (historias del pueblo) -->
+  <dialog id="story" aria-labelledby="story-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <p class="eyebrow" id="story-tag"></p>
+    <h2 id="story-title"></h2>
+    <p id="story-intro"></p>
+    <div id="story-interaction"></div>
+    <p id="story-outcome" role="status" hidden></p>
+    <div id="story-write" hidden>
+      <label for="story-text">Tu línea</label>
+      <textarea id="story-text" rows="3" maxlength="1200" placeholder="Una línea…"></textarea>
+      <p id="story-count">Hasta 1200 caracteres. Se guarda en este dispositivo; no se envía.</p>
+    </div>
+    <div id="story-actions"></div>
+    <p id="story-note" role="status"></p>
+    <details id="story-think" hidden>
+      <summary>Reflexión (opcional)</summary>
+      <p id="story-think-text"></p>
+    </details>
+    <a id="story-source" target="_blank" rel="noopener">Sobre el tema ↗</a>
+    <button id="story-read" hidden>Profundizar: lectura</button>
+  </dialog>
+  <!-- Mapa -->
+  <dialog id="map" aria-labelledby="map-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <h2 id="map-title">Mapa de Macondo</h2>
+    <div id="map-canvas" role="img" aria-label="Esquema del pueblo con tu posición"></div>
+    <ul id="map-destinations"></ul>
+    <p id="map-hint">Elige un lugar: «Ir hasta allí» te guía volando.</p>
+  </dialog>
+  <dialog id="discoveries" aria-labelledby="discoveries-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <p class="eyebrow">SEIS PEQUEÑOS ASOMBROS</p>
+    <h2 id="discoveries-title">Hallazgos del paseo</h2>
+    <p>Sigue las semillas doradas. Acércate para descubrir una frase y guardarla aquí. Puedes encontrarlas en cualquier orden.</p>
+    <p id="discovery-complete" hidden>Encontraste los seis asombros. Ahora el pueblo también tiene una historia tuya.</p>
+    <ul id="discovery-list"></ul>
+    <button id="discovery-write">Escribir mi recuerdo</button>
+  </dialog>
+  <!-- Ayuda y alternativa sin 3D -->
+  <dialog id="help" aria-labelledby="help-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <h2 id="help-title">Cómo recorrer</h2>
+    <ul>
+      <li><strong>Vuelo:</strong> usted es una mariposa amarilla. Toque o haga clic en cualquier punto y vuela hasta allí; nada la hace caer ni la lastima.</li>
+      <li><strong>Altura:</strong> Espacio sube y Shift baja (o los botones ▲▼). La altura que elija se conserva, y el pueblo queda debajo: baje de nuevo para leer y descubrir lo que hay en el suelo.</li>
+      <li><strong>Computador:</strong> WASD o flechas para volar hacia donde mira la cámara; E o el botón Explorar para descubrir algo cercano. R centra la cámara, M abre el mapa y Escape detiene el vuelo.</li>
+      <li><strong>Móvil:</strong> joystick abajo a la izquierda para volar, los botones ▲▼ para subir y bajar, toque para ir a un punto, botón «Explorar» cuando aparezca.</li>
+      <li><strong>Cámara:</strong> arrastre para girarla alrededor de la mariposa.</li>
+      <li><strong>Mapa:</strong> el minimapa de abajo a la derecha marca los caminos y el destino en marcha. El botón «Mapa» abre los destinos y «Guiarme» vuela por usted; puede detenerlo cuando quiera.</li>
+      <li><strong>Voz:</strong> la guía marca el paso; apague el chip «Voz» para silencio. Subtítulos siempre visibles. Quieto en un lugar nuevo, el pueblo se lo cuenta solo.</li>
+      <li>Ninguna pregunta bloquea el paso. Visite los lugares a su ritmo.</li>
+    </ul>
+    <p><label for="quality-mode">Calidad visual</label> <select id="quality-mode"><option value="detail">Detallada</option><option value="light">Ligera · menos sombras</option></select></p>
+    <button id="restart-tutorial">Repetir tutorial</button>
+    <button id="no3d">Explorar sin 3D</button>
+    <button id="reset-progress">Reiniciar recorrido (borra visitas y escritura)</button>
+  </dialog>
+  <div id="fallback" hidden>
+    <h2>La experiencia 3D no pudo iniciarse</h2>
+    <p>El recorrido completo está disponible como lista de lugares:</p>
+    <p class="eyebrow">Historias del pueblo</p>
+    <nav id="fallback-historias" aria-label="Historias del pueblo"></nav>
+    <p class="eyebrow">Lecturas</p>
+    <nav id="fallback-places" aria-label="Lecturas"></nav>
+  </div>
+  <div id="transition" hidden></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

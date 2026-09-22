@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap');
+:root{font-family:'DM Sans',sans-serif;color:#fff6df;background:#172d3a;font-synthesis:none}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #ffcc65;outline-offset:5px}#scene{position:fixed;inset:0;background:radial-gradient(ellipse at 73% 40%,#cf8a87,#343c62 48%,#132e3b 90%)}canvas{display:block;width:100%;height:100%}header{position:relative;z-index:1;display:flex;align-items:center;gap:24px;padding:26px 5%;font-size:10px;letter-spacing:3px;pointer-events:none}header>*{pointer-events:auto}.brand{font-family:Georgia;font-size:35px;text-decoration:none;color:#fff6df;letter-spacing:-6px}.brand span{color:#ffcc65;font-size:24px}header button{margin-left:auto;border:1px solid #ffffff40;color:inherit;background:#142d3d60;border-radius:30px;padding:10px 16px;font-size:11px;letter-spacing:0;min-height:44px}main{position:relative;pointer-events:none;min-height:calc(100svh - 100px);padding:0 5%}.intro{padding-top:8vh;max-width:610px}.eyebrow{font-size:10px;letter-spacing:3px;color:#ffcd70;font-weight:600}h1{font-family:'Playfair Display',Georgia,serif;font-weight:500;font-size:clamp(42px,5.7vw,86px);line-height:1.07;letter-spacing:-3px;margin:24px 0}h1 em{color:#ffd272;font-weight:500}.lede{font-size:15px;line-height:1.9;color:#e1dfdf}.primary{pointer-events:auto;border:0;background:#ffcd70;color:#263845;border-radius:4px;padding:17px 24px;margin-top:20px;font-weight:600}.primary span{margin-left:30px}.hint{font-size:10px;color:#d1cbd1;margin-top:20px}.coordinate{position:absolute;right:5%;top:57%;font-size:9px;letter-spacing:2px;text-align:right}.coordinate span{display:block;font-family:Georgia;font-style:italic;letter-spacing:0;font-size:14px;margin-top:8px}nav{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:7vh;pointer-events:auto}nav button{display:flex;align-items:center;gap:14px;text-align:left;padding:20px;background:#14303c9c;backdrop-filter:blur(16px);border:1px solid #e6d7ba30;border-radius:7px;color:inherit;transition:transform .2s,background .2s}nav button:hover{transform:translateY(-5px);background:#284653}nav .icon{font-size:30px;color:var(--accent)}nav small{display:block;font-size:8px;letter-spacing:2px;margin-bottom:8px;color:#ccc5bc}nav strong{font-family:Georgia;font-size:16px;font-weight:400}.footer{display:flex;gap:20px;align-items:center;font-size:8px;letter-spacing:2px;padding:20px 0;color:#c2bcc3}.footer span:last-child{margin-left:auto}dialog{background:#f8f1e1;color:#293b43;border:0;border-radius:12px;padding:40px;max-width:560px;width:calc(100% - 32px);max-height:85svh;box-shadow:0 30px 100px #0007}dialog::backdrop{background:#0c233baa;backdrop-filter:blur(8px)}dialog .eyebrow{color:#9d641d}h2{font-family:'Playfair Display',Georgia;font-size:37px;font-weight:500;margin:20px 0}dialog p{line-height:1.7;font-size:14px}.close{position:absolute;right:16px;top:10px;border:0;background:none;font-size:28px}.work{background:#e9e2cf;padding:16px;font-size:12px;line-height:1.6;border-left:3px solid #b98c42}fieldset{border:0;padding:0;margin-top:25px}legend{font-size:14px;margin-bottom:12px}#answers{display:grid;gap:8px}#answers button{padding:12px;text-align:left;background:transparent;border:1px solid #c7c4b7;border-radius:5px;color:inherit}#answers button[aria-pressed=true]{background:#dae7d9;border-color:#416b55}#feedback{min-height:24px;font-size:12px}dialog a{font-size:12px;color:#46635d}.fallback{position:absolute;right:10%;top:40%;max-width:260px;color:#fff}.footer,nav{position:relative}@media(min-height:820px){nav{margin-top:12vh}}@media(max-width:700px){header{padding:20px 6%;gap:15px;letter-spacing:1px}header button{font-size:9px;padding:9px}.intro{padding-top:4vh}h1{letter-spacing:-1.5px;font-size:48px;text-shadow:0 2px 24px #132e3b80}.lede{font-size:13px}.lede,.hint{text-shadow:0 1px 10px #132e3bcc,0 0 6px #132e3b99}.coordinate{display:none}nav{grid-template-columns:1fr 1fr;margin-top:210px;gap:8px}nav button{padding:14px;gap:10px}nav strong{font-size:13px}.footer{letter-spacing:0;flex-wrap:wrap;gap:8px}.footer span:last-child{margin-left:0;width:100%}dialog{padding:30px 24px}h2{font-size:30px}}
+
+/* Free exploration and explicit exits from every station. */
+.exploring .intro,.exploring .coordinate{display:none}.exploring main{display:none}.exploring header{position:fixed;inset:0 0 auto 0}
+/* Sobre la escena el encabezado no tiene dónde apoyarse: el cielo pasa por detrás del rótulo,
+   de la marca y de la píldora «Pausar movimiento», y los tres caían a 1,5-4,1:1. El velo es el
+   mismo vidrio que ya usan los chips del HUD (#14303cd0 + desenfoque), que sobre el cielo más
+   claro medido da ≈9:1. En la portada el fondo es el degradado oscuro y el texto se lee solo,
+   así que el velo entra únicamente con .exploring y la portada conserva su encabezado desnudo. */
+.exploring header .brand,.exploring header>span,.exploring header button{background:#14303cd0;backdrop-filter:blur(10px);border-color:#e6d7ba30}
+.exploring header .brand,.exploring header>span{border:1px solid #e6d7ba30;border-radius:30px;padding:8px 16px}
+
+/* ===== HUD del paseo ===== */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5;font-size:13px}
+#hud>*{pointer-events:auto}
+#place-name{position:absolute;top:74px;left:50%;transform:translateX(-50%);background:#14303cc0;backdrop-filter:blur(10px);color:#fff6df;padding:8px 20px;border-radius:20px;font-family:Georgia;font-size:15px;letter-spacing:1px;border:1px solid #e6d7ba30}
+#hud-actions{position:absolute;top:74px;right:14px;display:flex;flex-direction:column;gap:8px}
+#hud-actions button,#interact-btn,#tour-stop,#tour-continue,#tour-skip-audio{padding:10px 16px;border:1px solid #e6d7ba40;border-radius:8px;background:#14303cd0;color:#fff6df;backdrop-filter:blur(10px);font-size:12px}
+#hud-actions button:hover,#interact-btn:hover{background:#284653}
+#interact-tip{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:#14303cd9;color:#fff6df;padding:10px 16px;border-radius:10px;backdrop-filter:blur(10px)}
+#interact-tip kbd{background:#ffcd70;color:#263845;border-radius:4px;padding:2px 7px;font-size:11px}
+/* Minimapa: abajo a la derecha, donde no compite con el banner, el subtítulo ni el joystick.
+   No recibe clics —es un aviso, no un botón— y encoge en ventanas bajas para no pisar la
+   columna de acciones, que es lo único que llega tan abajo por la derecha. */
+#minimap{position:absolute;right:14px;bottom:18px;width:132px;height:132px;padding:6px;border-radius:12px;background:#14303ccc;border:1px solid #e6d7ba30;backdrop-filter:blur(10px);pointer-events:none}
+#minimap svg{display:block;width:100%;height:100%}
+@media(max-height:700px){#minimap{width:104px;height:104px}}
+#tour-banner{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:#14303cd9;color:#fff6df;padding:12px 18px;border-radius:10px;backdrop-filter:blur(10px)}
+#tour-continue{background:#ffcd70!important;color:#263845!important;font-weight:600}
+#joystick{display:none;position:absolute;left:22px;bottom:26px;width:104px;height:104px;border-radius:50%;background:#14303c70;border:1.5px solid #e6d7ba50;touch-action:none;backdrop-filter:blur(6px)}
+body.touch #joystick{display:block}
+/* Altura del vuelo. En computador va sobre el aviso de vuelo, en el rincón izquierdo, lejos
+   de la columna de acciones, que es lo único que llega tan abajo por la derecha. En táctil
+   sube encima del minimapa: el pulgar derecho la alcanza sin soltar la mirada, y el rincón
+   inferior izquierdo —joystick y banner del recorrido— queda entero para volar. */
+#altitude{position:absolute;left:20px;bottom:60px;display:flex;flex-direction:row;gap:8px}
+body.touch #altitude{left:auto;right:14px;bottom:176px;flex-direction:column;gap:10px}
+#altitude button{width:46px;height:46px;padding:0;font-size:14px;line-height:1;border:1px solid #e6d7ba40;border-radius:50%;background:#14303cd0;color:#fff6df;backdrop-filter:blur(10px);touch-action:none}
+#altitude button:hover{background:#284653}
+#altitude button:active{background:#ffcd70;border-color:#ffcd70;color:#263845}
+#joy-knob{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#ffcd70cc}
+@media(max-width:700px){#place-name{top:auto;bottom:150px;font-size:12px}#hud-actions{flex-direction:row;flex-wrap:wrap;top:64px;left:12px;right:12px}#hud-actions button{padding:9px 12px;font-size:11px}#interact-tip{bottom:190px}#tour-banner{flex-wrap:wrap;bottom:12px;max-width:92vw}header button{font-size:9px;padding:8px 10px}dialog#reading,dialog#writing,dialog#story{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0 auto;width:100%;max-width:100%;border-radius:16px 16px 0 0;max-height:74svh}}
+
+/* ===== Escritura ===== */
+#reading,#writing,#map,#help,#story{color:#293b43}
+/* El enunciado del cuaderno es la etiqueta real del área de texto, no un párrafo vecino:
+   nace como <label for> para que el campo tenga nombre —antes lo tomaba del placeholder— y
+   conserva el aspecto de bloque que tenía como <p>. */
+#writing-prompt{display:block}
+#story-write label{display:block;font-size:13px;font-weight:600;margin-top:4px}
+#writing textarea{width:100%;margin:14px 0 4px;padding:12px;border:1px solid #c7c4b7;border-radius:6px;font:inherit;background:#fffdf6}
+#writing .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#writing .row button{padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6}
+#writing-status{font-size:12px;color:#416b55}
+#writing-count,#story-count{font-size:11px;color:#5c6b66;margin:0 0 10px}
+#writing-traces{margin-top:16px;border-top:1px solid #d8d0bd;padding-top:12px}
+#writing-traces ul{list-style:none;padding:0;display:grid;gap:8px;margin:8px 0 0}
+#writing-traces li{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#e9e2cf;border-radius:6px;padding:10px 12px;font-size:13px}
+#writing-traces li button{padding:6px 10px;border:1px solid #c7c4b7;border-radius:5px;background:#fffdf6;white-space:nowrap}
+
+/* ===== Historias ===== */
+#story-actions{display:grid;gap:8px;margin-top:18px}
+#story-actions button{padding:12px;text-align:left;background:#fffdf6;border:1px solid #c7c4b7;border-radius:6px;color:inherit}
+#story-actions button:hover{background:#dae7d9}
+#story-outcome{background:#e9e2cf;padding:14px;border-left:3px solid #416b55;font-size:14px}
+#story-text{width:100%;margin:10px 0 4px;padding:12px;border:1px solid #c7c4b7;border-radius:6px;font:inherit;background:#fffdf6}
+#story-note{min-height:20px;font-size:12px;color:#416b55}
+#story-think{margin-top:6px;font-size:13px}
+#story-think summary{cursor:pointer;color:#46635d}
+#story-source{display:block;margin-top:12px;font-size:12px;color:#46635d}
+#story-read{margin-top:10px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6}
+
+/* ===== Mapa ===== */
+#map{max-width:480px}
+#map-canvas{background:#e9e2cf;border-radius:8px;padding:10px;margin:10px 0}
+#map-destinations{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+#map-destinations button{width:100%;padding:12px;border:1px solid #c7c4b7;border-radius:6px;background:#fffdf6;text-align:left}
+#map-hint{font-size:12px;color:#5c6b66}
+
+/* ===== Ayuda y fallback ===== */
+/* La ayuda lleva siete viñetas y tres acciones: con el 85svh general se quedaba al filo y
+   «Reiniciar recorrido» caía fuera de la vista sin que el panel pareciera desplazable. */
+#help{max-height:94svh}
+#help li{margin:10px 0;line-height:1.6;font-size:14px}
+#no3d{margin-top:14px;padding:12px 16px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6}
+/* Tres controles se quedaron fuera de la familia y salían con el gris del sistema —fondo
+   #efefef, borde negro, radio 0, la mitad de altos que sus vecinos—. Los encontró un barrido
+   de `button, select, input, textarea` buscando la firma nativa, no el ojo. */
+#restart-tutorial{margin-top:14px;margin-right:8px;padding:12px 16px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6;color:#293b43}
+#discovery-write{margin-top:12px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6;color:#293b43}
+#reset-progress{margin-top:10px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:transparent;color:#8a4a3a;font-size:12px}
+#fallback{position:fixed;inset:0;z-index:9;background:#172d3a;color:#fff6df;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center}
+#fallback nav{display:grid;gap:10px;width:min(360px,90vw)}
+#fallback button{padding:14px;border:1px solid #e6d7ba40;border-radius:8px;background:#14303c;color:#fff6df}
+#transition{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 70%,transparent,#132e3b);pointer-events:none}
+.secondary{pointer-events:auto;border:1px solid #ffffff50;color:#fff6df;background:transparent;border-radius:4px;padding:12px 18px;margin-left:12px}
+@media(max-width:700px){.secondary{margin-left:0;margin-top:10px;display:block}}
+
+/* ===== Voz narrada, subtítulos y recuerdo ===== */
+#caption-bar{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:10px;max-width:92vw;pointer-events:none}
+#caption{max-width:min(640px,90vw);margin:0;background:#14303cd9;color:#fff6df;padding:10px 16px;border-radius:10px;backdrop-filter:blur(10px);font-size:13px;line-height:1.55}
+#tour-skip-audio{pointer-events:auto;flex:none}
+#hud-actions button[aria-pressed="true"]{background:#ffcd70;border-color:#ffcd70;color:#263845;font-weight:600}
+@keyframes reveal{from{opacity:0;letter-spacing:6px;transform:translateX(-50%) translateY(-6px)}to{opacity:1;letter-spacing:1px;transform:translateX(-50%) translateY(0)}}
+#place-name.reveal{animation:reveal .9s ease both}
+#vignette{position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(ellipse at center,transparent 58%,#0f2430b3 100%);opacity:0;transition:opacity .8s}
+.exploring #vignette{opacity:1}
+#reading-listen{margin-top:12px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6}
+#reading-conversa{margin:14px 0 0;background:#e9e2cf;border-left:3px solid #b98c42;padding:12px 14px;font-size:14px;font-style:italic}
+#reading-conversa::before{content:'Para conversar';display:block;font-style:normal;font-weight:600;font-size:10px;letter-spacing:2px;color:#b98c42;margin-bottom:6px}
+@media(max-width:700px){#caption-bar{bottom:170px;flex-direction:column}#caption{font-size:12px}}
+
+/* Orientación y práctica dentro del paisaje. */
+#journey-status{position:absolute;top:110px;left:20px;max-width:310px;padding:10px 14px;border-radius:12px;background:#14303ce8;line-height:1.5;pointer-events:none}
+#onboarding{position:absolute;top:180px;left:20px;width:min(310px,calc(100vw - 40px));padding:18px;border:1px solid #ffcd7080;border-radius:16px;background:#14303cf2;box-shadow:0 12px 32px #0003}
+#onboarding small{display:block;color:#ffcd70;font-size:10px;letter-spacing:1.5px}
+#onboarding strong{display:block;font-family:Georgia,serif;font-size:23px;margin-top:12px}
+#onboarding p{line-height:1.6;margin:10px 0 16px}
+#onboarding button{background:transparent;color:#ffcd70;border:1px solid #ffcd7060;border-radius:6px;padding:9px 12px;min-height:44px}
+/* 44 px es el piso táctil que el propio proyecto ya usaba en #onboarding y en las historias;
+   los chips del HUD se habían quedado en 40 y eran trece objetivos seguidos en la columna
+   que un pulgar tiene que acertar con una sola mano. */
+#hud-actions button{min-height:44px}
+@media(max-width:700px){
+  #hud-actions{gap:5px}#hud-actions button{min-height:44px;padding:8px 10px}
+  #journey-status{top:158px;left:12px;right:12px;max-width:none;font-size:11px;margin:0}
+  #onboarding{top:208px;left:12px;width:min(300px,calc(100vw - 24px));padding:14px}
+  #onboarding strong{font-size:20px}#onboarding p{font-size:12px}
+  #tour-banner{left:auto;right:12px;transform:none;width:calc(100% - 150px);padding:10px;gap:6px;font-size:11px}
+}
+@media(max-height:580px){#onboarding{top:150px;max-height:calc(100svh - 170px);overflow:auto}#journey-status{top:105px}}
+
+#flight-status{position:absolute;bottom:12px;left:20px;max-width:300px;background:#14303ce8;border-radius:8px;padding:8px 12px;font-size:11px;pointer-events:none}#flight-status:empty{display:none}
+body.touch #flight-status{bottom:135px;left:12px;max-width:210px}
+
+#discovery-toast{position:absolute;top:130px;left:50%;transform:translateX(-50%);padding:12px 20px;background:#ffdb88;color:#293b43;border-radius:12px;box-shadow:0 8px 24px #0003;pointer-events:none;max-width:85vw;text-align:center}#discovery-toast:empty{display:none}
+#discovery-list{list-style:none;padding:0;display:grid;gap:12px}#discovery-list li{padding:14px;border:1px solid #c9bc9b;border-radius:10px;background:#ede5d3}#discovery-list p{margin-bottom:0}#quality-mode{font:inherit;padding:9px;border-radius:6px;max-width:100%;background:#fffdf6;border:1px solid #c7c4b7;color:#293b43}
+/* Los seis hallazgos no caben en un panel de 85svh (1009 px de contenido): el mensaje de
+   cierre quedaba bajo el pliegue justo en el momento de la recompensa. Va arriba, con peso
+   de conclusión, y el panel respira más; la lista es el archivo y se desplaza sin drama. */
+#discoveries{max-height:94svh}
+#discovery-complete{background:#e9e2cf;border-left:3px solid #416b55;padding:14px;margin:0 0 14px;font-size:14px}
+@media(max-width:700px){#hud-actions{max-height:152px;overflow-y:auto}#journey-status{top:208px}#onboarding{top:260px}#discovery-toast{top:auto;bottom:240px;width:85vw}#hud-actions button{padding:8px 10px}#caption{max-width:90vw}}
+@media(max-height:580px) and (min-width:701px){#hud-actions{max-height:calc(100svh - 85px);overflow-y:auto}}
+
+#story-interaction { display: grid; gap: .75rem; }
+#story-interaction label { display: grid; gap: .4rem; }
+#story-interaction select { width: 100%; min-height: 44px; font: inherit; padding: .5rem; }
+#story-interaction button[aria-pressed="true"] { outline: 3px solid currentColor; outline-offset: 2px; }
+#story-interaction button { min-height: 44px; padding: .65rem .8rem; border: 1px solid #c8c4b6; border-radius: 6px; background: #fffdf6; color: #263d44; font: inherit; cursor: pointer; }
+.story-garden { height: 120px; position: relative; overflow: hidden; border-radius: 8px; background: linear-gradient(#f7dda3 70%, #7d9369 70%); }
+.story-garden.rainy { background: linear-gradient(#bacbd8 70%, #526e50 70%); }
+.story-garden .tree { position: absolute; left: 25%; bottom: 18%; width: 12px; height: 60px; background: #71513b; }
+.story-garden .tree::before { content: ''; position: absolute; width: 80px; height: 48px; border-radius: 50%; background: #78965f; left: -34px; top: -16px; box-shadow: 9px -7px #e9dab4; }
+.story-garden.rainy .tree::before { box-shadow: 9px -7px #5c815d; }
+.story-garden .bench { position: absolute; right: 20%; bottom: 20%; width: 86px; height: 27px; border: solid #654e38; border-width: 8px 5px; color: #f7dda3; text-align: center; line-height: 12px; }
+.story-garden .petals { position: absolute; left: 13%; bottom: 16%; color: #ffe1c4; letter-spacing: 12px; visibility: hidden; }
+.story-garden.rainy .petals { visibility: visible; }
+
+/* En ventanas bajas la portada no cabe y «Comenzar recorrido» —la única puerta de entrada—
+   caía bajo el pliegue: a 320×568 quedaba 28 px fuera y con 200 % de zoom 46 px. Se comprime
+   el bloque en vez de recortarlo: menos aire arriba, titular más corto, entradilla más
+   apretada. Va al final a propósito, para poder ganarle al h1 de 48 px del bloque de móvil. */
+@media(max-height:640px){
+  .intro{padding-top:2vh}
+  h1{font-size:clamp(30px,8.5vw,42px);margin:14px 0;letter-spacing:-1.5px}
+  .lede{font-size:14px;line-height:1.6;margin:0}
+  .primary{margin-top:12px;padding:14px 20px}
+  .hint{margin-top:12px}
+}

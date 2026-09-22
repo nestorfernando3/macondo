@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+internal/audio/deepgram.key
+# Configuración local de la herramienta de desarrollo. Sus reglas de permisos repiten la
+# llave de Deepgram en claro: es la misma que este archivo mantiene fuera del control de
+# versiones, así que la carpeta entera queda fuera. Nunca se publica.
+.commandcode/
