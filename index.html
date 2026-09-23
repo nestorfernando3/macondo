@@ -101,6 +101,9 @@
     </blockquote>
     <p id="reading-body"></p>
     <div class="work" id="reading-work"></div>
+    <!-- «Escuchar» va antes de la capa literaria: narra la lectura, y la ficha —que es más
+         larga— no puede empujarlo bajo el pliegue del panel (el guion de narración lo pulsa). -->
+    <button id="reading-listen" hidden>▶ Escuchar</button>
     <!-- Capa literaria: el sello dice de dónde viene cada cosa y la ficha cuenta lo que la
          novela hace con el tema de esta estación, en palabras propias y con su capítulo. -->
     <section id="reading-novela" hidden aria-label="En la novela"></section>
@@ -110,7 +113,6 @@
       <div id="answers"></div>
     </fieldset>
     <p id="feedback" role="status"></p>
-    <button id="reading-listen" hidden>▶ Escuchar</button>
     <p class="row">
       <a id="source" target="_blank" rel="noopener">Explorar la fuente ↗</a>
       <button id="open-indice" type="button">Lo que cuenta la novela</button>
@@ -167,9 +169,22 @@
     <!-- Arriba y no al pie: el panel del mapa ya roza el alto de la ventana con sus seis
          destinos, y al pie el botón quedaba fuera del área visible (ningún clic lo alcanzaba). -->
     <button id="open-arbol" type="button">Árbol de la familia Buendía</button>
-    <div id="map-canvas" role="img" aria-label="Esquema del pueblo con tu posición"></div>
-    <ul id="map-destinations"></ul>
-    <p id="map-hint">Elige un lugar: «Ir hasta allí» te guía volando.</p>
+    <!-- El dibujo y los destinos van de lado y no apilados: en un pueblo de 70 × 55 m el mapa es
+         apaisado, y apilado obligaba a estirar el lienzo en alto hasta empujar la lista fuera de
+         la vista. De lado, cada mitad usa el espacio que le corresponde y el panel encoge. En el
+         teléfono vuelven a apilarse (ver style.css). -->
+    <div id="map-columnas">
+      <!-- El dibujo lo compone `ui/Mapa.js` y lleva dentro los cinco lugares como botones, así que
+           el contenedor no puede ser `role="img"`: un rol de imagen poda el subárbol y dejaría los
+           puntos fuera del alcance del teclado y del lector. El svg se anuncia como grupo. -->
+      <div id="map-canvas"></div>
+      <div id="map-lista">
+        <ul id="map-destinations"></ul>
+        <!-- La distinción pendiente/visitado se ve en el dibujo por forma y por color, y aquí se
+             dice con palabras: nadie tiene que deducirla del tono. -->
+        <p id="map-hint"><span class="leyenda-pendiente" aria-hidden="true">○</span> por descubrir · <span class="leyenda-visitado" aria-hidden="true">●</span> ya visitado. Elija un lugar en el dibujo o en la lista.</p>
+      </div>
+    </div>
   </dialog>
   <dialog id="discoveries" aria-labelledby="discoveries-title">
     <button class="close" aria-label="Cerrar">×</button>

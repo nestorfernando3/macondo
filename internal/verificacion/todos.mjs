@@ -27,6 +27,7 @@ const GUIONES = [
   'cdp_metricas',    // coste de dibujo por lugar + capturas
   'cdp_modelos',     // acercamiento a un metro: la pieza, no el encuadre
   'cdp_paneles',     // los paneles abren y ningún control sale con el gris del navegador
+  'cdp_mapa',        // el mapa del pueblo: capas, lugares elegibles, toque, contraste y encaje
   'cdp_novela',      // capa literaria: ficha, índice, árbol, palabras, pergamino y lluvia
   'cdp_rendimiento', // FPS del banco y presupuesto de llamadas
 ];

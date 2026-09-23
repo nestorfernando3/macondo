@@ -29,6 +29,7 @@ import { capturarPostal } from './world/postal.js';
 import { crearFichaNovela, crearIndiceNovela, crearCuadernoPalabras, crearSelloOrigen } from './ui/NovelaPanel.js';
 import { crearArbol } from './ui/ArbolPanel.js';
 import { crearPergamino } from './ui/Pergamino.js';
+import { crearMapa } from './ui/Mapa.js';
 import { crearLluvia } from './world/lluvia.js';
 
 const $ = s => document.querySelector(s);
@@ -544,7 +545,22 @@ function updateCount(field, out){
 // ---------- Recorrido guiado ----------
 function progresoTour(){ return ' · ' + TOUR_ORDER.filter(i => state.discovered.has(i)).length + '/' + TOUR_ORDER.length; }
 function startTour(destId){
-  if (!tour.startTo(destId, player.position)) return;
+  if (!tour.startTo(destId, player.position)) {
+    // El planificador no encontró salida: pasa dentro de un corral de tapias —el patio, el del
+    // puerto— cuando ni subiendo hay una recta limpia a una calle. La plaza es la recuperación
+    // que el HUD promete, así que ahí se lleva al jugador; para los demás destinos se dice qué
+    // pasa en la franja de estado, que es mejor que un botón mudo.
+    stopTour();
+    if (destId === 'plaza') {
+      player.place(NODES.plaza[0], NODES.plaza[1], 0);
+      updatePlace('plaza');
+      $('#flight-status').textContent = 'Sin camino despejado: le dejamos en la plaza.';
+    } else {
+      $('#flight-status').textContent = 'No hay un camino despejado hasta ' + LOCATIONS[destId].name +
+        '. Suba para buscar la calle, o pulse «Plaza».';
+    }
+    return;
+  }
   // El relato y las llegadas están escritos para la altura de crucero, y la mirada es ahora
   // el mando de altura: sin devolverla al horizonte, el recorrido arrancaría subiendo.
   player.resetAltitude();
@@ -624,43 +640,25 @@ $('#take-postcard').onclick = async () => {
 };
 
 // ---------- Mapa ----------
+// El dibujo lo compone `ui/Mapa.js` —el grafo del pueblo sobre papel, con el río, el muelle y
+// las casas— y aquí sólo se le dice qué lugares ya visitó y qué hacer cuando se elige uno. La
+// lista de destinos se conserva tal cual: el dibujo se puede tocar, pero la lista es la ruta de
+// texto y la que funciona sin puntero fino.
+function irA(id){
+  $('#map').close();
+  startTour(id);
+}
 function drawMap(){
-  const c = $('#map-canvas'); c.replaceChildren();
-  const px = v => 40 + v, pz = v => 40 + v; // mundo ±38 m ≈ viewBox 80
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 80 80'); svg.setAttribute('width', '100%');
-  for (const [from, to] of EDGES) {
-    const a = NODES[from], b = NODES[to];
-    const l = document.createElementNS(svg.namespaceURI, 'line');
-    l.setAttribute('x1', px(a[0])); l.setAttribute('y1', pz(a[1]));
-    l.setAttribute('x2', px(b[0])); l.setAttribute('y2', pz(b[1]));
-    l.setAttribute('stroke', '#8d7a5f'); l.setAttribute('stroke-width', '.8'); svg.append(l);
-  }
-  for (const id in LOCATIONS) {
-    const { x, z, name } = LOCATIONS[id];
-    const dot = document.createElementNS(svg.namespaceURI, 'circle');
-    dot.setAttribute('cx', px(x)); dot.setAttribute('cy', pz(z)); dot.setAttribute('r', '1.6');
-    dot.setAttribute('fill', state.discovered.has(id) ? '#416b55' : '#b98c42');
-    const t = document.createElementNS(svg.namespaceURI, 'text');
-    t.setAttribute('x', px(x) + 2.5); t.setAttribute('y', pz(z) + 1);
-    t.setAttribute('font-size', '2.6'); t.setAttribute('fill', '#293b43');
-    t.textContent = name;
-    svg.append(dot, t);
-  }
-  if (player) {
-    const arrow = document.createElementNS(svg.namespaceURI, 'polygon');
-    const x = px(player.position.x), y = pz(player.position.z), a = -player.yaw;
-    arrow.setAttribute('points', [[0,-3],[2,2],[-2,2]].map(([dx, dy]) =>
-      `${x + dx*Math.cos(a) - dy*Math.sin(a)},${y + dx*Math.sin(a) + dy*Math.cos(a)}`).join(' '));
-    arrow.setAttribute('fill', '#c0392b');
-    svg.append(arrow);
-  }
-  c.append(svg);
+  $('#map-canvas').replaceChildren(crearMapa({
+    descubiertos: state.discovered,
+    jugador: player ? { x: player.position.x, z: player.position.z, yaw: player.yaw } : null,
+    alElegir: irA,
+  }));
   $('#map-destinations').replaceChildren(...Object.entries(LOCATIONS).filter(([id]) => id !== 'patio').map(([id, l]) => {
     const li = document.createElement('li');
     const b = document.createElement('button');
     b.textContent = (state.discovered.has(id) ? '✓ ' : '') + l.name;
-    b.onclick = () => { $('#map').close(); startTour(id); };
+    b.onclick = () => irA(id);
     li.append(b); return li;
   }));
 }

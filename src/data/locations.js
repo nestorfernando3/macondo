@@ -36,39 +36,15 @@ export const EDGES = [
 
 const ADJ = {}; EDGES.forEach(([a,b])=>{(ADJ[a]??=[]).push(b);(ADJ[b]??=[]).push(a)});
 
+// Vecinos de un nodo en el grafo de caminos. Lo lee el planificador de rutas, que necesita
+// recorrer el grafo con costes (no sólo la primera ruta que encuentre).
+export function vecinos(id){ return ADJ[id] ?? [] }
+
 // Nodo de llegada del recorrido guiado para cada lugar.
 // Casa → patio: la guía cruza la puerta; probar la puerta es parte del paseo.
 export const LOCATION_NODE = { plaza:'plaza', casa:'patio', jardin:'jardin', puerto:'muelle', mirador:'cima', patio:'patio' };
 
-// Ruta más corta (BFS por aristas) entre dos nodos.
-export function findRoute(a,b){
- if(a===b) return [a];
- const prev={[a]:null}, q=[a];
- while(q.length){
-  const n=q.shift();
-  for(const m of ADJ[n]) if(!(m in prev)){
-   prev[m]=n;
-   if(m===b){const path=[m];let c=m;while(prev[c]!==null){c=prev[c];path.unshift(c)}return path}
-   q.push(m);
-  }
- }
- return null;
-}
-
-export function nodeOf(id){ return NODES[id] }
-
-// Nodo transitable más cercano a una posición del mundo.
-export function nearestNode(x,z){
- let best=null,bd=Infinity;
- for(const id in NODES){const [nx,nz]=NODES[id];const d=(nx-x)**2+(nz-z)**2;if(d<bd){bd=d;best=id}}
- return best;
-}
-
-// Puntos (pares [x,z]) de la ruta completa desde la posición del jugador hasta un lugar.
-export function routePointsFrom(x,z,locationId){
- const destId = LOCATION_NODE[locationId] || locationId;
- const from=nearestNode(x,z);
- const path=findRoute(from,destId);
- if(!path) return null;
- return [[x,z],...path.map(id=>NODES[id])];
-}
+// Aquí no se trazan rutas: este módulo es el registro de los lugares y del grafo, y no conoce
+// el mundo. Quien decide por dónde se puede volar —con las colisiones delante— es
+// `navigation/RoutePlanner.js`. Antes vivía aquí un camino por BFS que enlazaba al jugador con
+// el nodo más cercano en línea recta, sin mirar qué había en medio.

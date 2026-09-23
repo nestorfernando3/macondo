@@ -22,6 +22,7 @@ export class WalkableWorld {
     this.plateaus = [];   // {x,z,r,h}
     this.sightBlocks = []; // {x1,z1,x2,z2} — lo que tapa la vista (muros altos)
     this.limit = 38;      // media-anchura del área caminable
+    this.radio = .22;     // radio del cuerpo que consulta (el mismo de PlayerController.RADIUS)
   }
 
   // `base` es el suelo del obstáculo: sirve para lo que está en el aire —el tejado de un patio,
@@ -76,6 +77,21 @@ export class WalkableWorld {
       const t = i / steps, x = ax + (bx-ax)*t, z = az + (bz-az)*t;
       for (const b of this.sightBlocks)
         if (x > b.x1 && x < b.x2 && z > b.z1 && z < b.z2) return false;
+    }
+    return true;
+  }
+
+  // ¿Se puede ir en línea recta de `a` a `b` volando a `altura` sobre el suelo? Muestrea el
+  // segmento a pasos cortos y pregunta por cada punto, subiendo con el terreno —el mirador es
+  // ladera y el muelle es una plataforma—. Es la pregunta que hace el planificador de rutas para
+  // no llevar a la mariposa contra una casa: sin ella, el tramo libre entre el jugador y el
+  // grafo se trazaba a ciegas y atravesaba lo que hubiera en medio.
+  pathClear(a, b, altura, paso = .25) {
+    const total = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const n = Math.max(1, Math.ceil(total / paso));
+    for (let i = 0; i <= n; i++) {
+      const t = i / n, x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
+      if (this.blocks(x, z, this.radio, this.groundAt(x, z) + altura)) return false;
     }
     return true;
   }

@@ -7,7 +7,8 @@ import { ancla, superficieDe, idsDeAnclas } from '../src/world/anclas.js';
 import { createStoryEffects } from '../src/world/storyEffects.js';
 import { BANCA_DEL_CORREO } from '../src/world/places/puerto.js';
 import { ENCOUNTERS } from '../src/data/encounters.js';
-import { LOCATIONS, NODES, EDGES, TOUR_ORDER, routePointsFrom } from '../src/data/locations.js';
+import { LOCATIONS, NODES, EDGES, TOUR_ORDER, LOCATION_NODE, SPAWN } from '../src/data/locations.js';
+import { planearRuta } from '../src/navigation/RoutePlanner.js';
 import { stations } from '../src/data/content.js';
 import { restoreProgress, serializeProgress } from '../src/state/progress.js';
 import { InteractionSystem } from '../src/interaction/InteractionSystem.js';
@@ -23,7 +24,13 @@ test('encuentros y rutas referencian registros existentes',()=>{
  assert.equal(new Set(ENCOUNTERS.map(e=>e.id)).size,ENCOUNTERS.length);
  for(const e of ENCOUNTERS){assert.ok(LOCATIONS[e.locationId]);assert.ok(stations.some(s=>s.id===e.contentId) || STORIES.some(s=>s.encounterId===e.id));assert.ok(e.radius>0)}
  for(const edge of EDGES) for(const id of edge) assert.ok(NODES[id]);
- for(const id of TOUR_ORDER) assert.ok(routePointsFrom(0,30,id)?.length>1);
+ // Cada destino del recorrido se alcanza desde la entrada por una ruta que de verdad está
+ // despejada a la altura de vuelo, no sólo por el grafo en el papel.
+ const {world}=createVillage({scene:new THREE.Scene(),camera:new THREE.PerspectiveCamera()});
+ for(const id of TOUR_ORDER){
+  const ruta=planearRuta(world,[SPAWN.x,SPAWN.z],NODES[LOCATION_NODE[id]],{siemprePorGrafo:true});
+  assert.ok(ruta && ruta.length>1, `sin ruta despejada hasta ${id}`);
+ }
 });
 test('migra visitas antiguas y tolera progreso corrupto',()=>{
  const ids=stations.map(s=>s.id);

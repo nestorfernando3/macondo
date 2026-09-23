@@ -82,11 +82,51 @@ body.pointer-locked #crosshair{display:block}
 #story-read{margin-top:10px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6}
 
 /* ===== Mapa ===== */
-#map{max-width:480px}
-#map-canvas{background:#e9e2cf;border-radius:8px;padding:10px;margin:10px 0}
-#map-destinations{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 10px}
+/* El dibujo lo compone `ui/Mapa.js`: el pueblo sobre papel, con el río al oeste, el muelle sobre
+   el agua y los caminos del grafo. El lienzo es apaisado a propósito —el pueblo mide 70 × 55 m y
+   el cuadrado anterior de 400 × 405 px gastaba el alto del panel en aire—, así que el mapa va de
+   lado con la lista de destinos en vez de encima de ella: el panel pasa de 480 × 691 px a unos
+   760 × 430, con las dos mitades a la vista y sin desplazar. */
+#map{max-width:760px;padding:26px}
+#map-columnas{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;align-items:start}
+#map-canvas{background:#e8ddc2;border-radius:8px;padding:8px;margin:0}
+#map-canvas svg.mapa{display:block;width:100%;height:auto}
+/* Pendiente y visitado se distinguen por FORMA —dos anillos huecos frente a anillo con disco—
+   y no sólo por color: es la prescripción que el informe de diseño dejó para el minimapa del
+   HUD, y aquí se cumple desde el principio. */
+.mapa-lugar{cursor:pointer}
+.mapa-lugar__aro,.mapa-lugar__disco{stroke-width:3.5}
+.mapa-lugar--pendiente .mapa-lugar__aro{fill:#fff8e6;stroke:#a8783a}
+.mapa-lugar--pendiente .mapa-lugar__disco{fill:none;stroke:#a8783a}
+.mapa-lugar--visitado .mapa-lugar__aro{fill:#eef5e9;stroke:#3f6b53}
+.mapa-lugar--visitado .mapa-lugar__disco{fill:#3f6b53;stroke:none}
+.mapa-lugar:hover .mapa-lugar__aro{fill:#fff2cf;stroke:#8a5f22}
+.mapa-lugar:focus-visible{outline:3px solid #b98c42;outline-offset:2px}
+/* El nombre lleva su propio halo (`paint-order`): el rótulo del puerto cae sobre el río y el del
+   mirador sobre la ladera, y el halo los hace legibles sin depender de lo que quede debajo. */
+.mapa-lugar__nombre{font-family:Georgia,'Playfair Display',serif;fill:#35594c;stroke:#f4ecd8;stroke-width:4px;paint-order:stroke;stroke-linejoin:round}
+.mapa-rio,.mapa-brujula{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:2px;fill:#4d7570}
+#map-lista{display:flex;flex-direction:column;gap:12px}
+/* Una sola columna: es una lista de caminos, y leída de arriba abajo dice en qué orden se
+   recorren. En el teléfono vuelve a dos columnas, donde el ancho manda sobre el orden. */
+#map-destinations{list-style:none;padding:0;display:grid;grid-template-columns:1fr;gap:8px;margin:0}
 #map-destinations button{width:100%;padding:12px;border:1px solid #c7c4b7;border-radius:6px;background:#fffdf6;text-align:left}
-#map-hint{font-size:12px;color:#5c6b66}
+#map-hint{font-size:12px;color:#5c6b66;margin:0}
+#map-hint .leyenda-pendiente{color:#a8783a}
+#map-hint .leyenda-visitado{color:#3f6b53}
+@media(max-width:700px){
+  /* Apilados: en 390 px el dibujo y la lista no caben de lado. La lista vuelve a dos columnas
+     —cinco destinos en una sola columna empujaban el pie fuera del panel— y el mapa queda
+     arriba, que es donde se mira primero. */
+  #map{padding:26px 22px}
+  #map-columnas{grid-template-columns:1fr;gap:14px}
+  #map-destinations{grid-template-columns:1fr 1fr}
+  /* El dibujo no se estira a lo ancho del panel cuando va apilado: en el borde del corte (700 px)
+     el lienzo pasaría de 314 a 624 px y se comería en alto lo que se acababa de ganar. Se le pone
+     techo —poco menos de media ventana, que es lo que deja sitio al título, a la lista y al pie—
+     y se centra. Por debajo del techo, que es el caso del teléfono, no cambia nada. */
+  #map-canvas{max-width:min(520px,48svh);width:100%;margin:0 auto}
+}
 
 /* ===== Ayuda y fallback ===== */
 /* La ayuda lleva siete viñetas y tres acciones: con el 85svh general se quedaba al filo y

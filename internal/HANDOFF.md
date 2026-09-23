@@ -1,4 +1,357 @@
-# Entrega vigente · La cámara no atraviesa el pueblo y el patio tiene techo (23 septiembre 2026)
+# Entrega vigente · La guía traza por donde se puede volar (23 septiembre 2026)
+
+Pedido: «aquí tienes otra referencia, hecha por el mejor LLM del mundo, para seguir mejorando»
+(`macondo-3d-web-experience (2).zip`). Es la misma estirpe que el zip anterior —la generación
+React/TSX, aquí además con la interfaz partida en `src/ui/{Hud,Lectura,ModoSin3D}.js`— y otra vez
+casi todo está superado por lo que hay: su `crearMapa` es un esquema de polilíneas, más pobre que
+el mapa ilustrado que entró ayer; su `PlayerController` **no** tiene el brazo de cámara que
+recorta contra la geometría (aquí sí, y `cdp_camara.mjs` lo prueba); su `anclas.js` es un registro
+de geometría que este pueblo tiene repartido entre `kit.js` y `places/*` con más piezas. Lo que
+**no** estaba superado, y es lo que se trajo, es lo suyo mejor: **un planificador de rutas que
+mira las colisiones antes de trazar**, y el escalón de altura para salir de un corral.
+
+## Qué se entregó
+
+- **`src/navigation/RoutePlanner.js` (nuevo, 100 líneas): el plan de vuelo del recorrido.**
+  Entra al grafo por un nodo al que se llega en línea recta despejada, recorre las aristas con
+  Dijkstra (coste real en metros, cada arista comprobada una sola vez) y sale por el nodo del
+  destino. Con `siemprePorGrafo` —lo que usa la guía— pasa por las calles aunque la recta esté
+  limpia; sin él, el vuelo libre va recto.
+- **`WalkableWorld.pathClear(a, b, altura)`**: la pregunta que faltaba —«¿se puede ir en recta de
+  aquí a allí a esta altura?»—. Muestrea el segmento a 25 cm y va subiendo con el terreno, así que
+  vale igual para la ladera del mirador y para la tabla del muelle. Más `world.radio` (0,22 m, el
+  mismo del jugador).
+- **El escalón de altura al salir.** Si a la altura de crucero no hay salida, el recorrido prueba
+  a 3,6 m y vuela **sólo el primer tramo** a esa altura: el jugador puede haber entrado volando a
+  un corral de tapias de 2,6 m —el patio de la casa, el del puerto— y desde dentro no hay calle a
+  2,1 m. Se ve subir sobre la tapia y bajar a la calle.
+- **Cuando ni así hay camino, se dice.** `startTour` avisaba con un `return` mudo: el botón no
+  hacía nada. Ahora escribe en la franja de estado qué pasa, y en el caso de «Plaza» —la
+  recuperación que el HUD promete— lleva al jugador a la plaza en vez de dejarlo encerrado.
+- **`data/locations.js` vuelve a ser sólo datos.** Se retiraron `routePointsFrom`, `findRoute`,
+  `nearestNode` y `nodeOf` (este último ya no lo usaba nadie): el trazado de rutas necesita el
+  mundo delante y ahora vive en `navigation/`, que es donde está la física. Queda `vecinos(id)`
+  como primitiva del grafo.
+- **`tests/rutas.test.js` (nuevo, 5 pruebas)**: que un muro corta la recta y una reja baja no; que
+  **ninguna** ruta del recorrido cruza un obstáculo desde una malla de 3 m por todo el pueblo; que
+  desde la entrada y desde cada parada siempre hay ruta a las demás; que vuelo libre va recto y un
+  destino dentro de un muro se rechaza; y que la ruta por el grafo pisa nodos del grafo.
+- **`tests/architecture.test.js`**: la comprobación «cada destino tiene ruta» ya no se hace contra
+  el BFS del papel sino contra el planificador y el mundo construido —es la misma promesa dicha
+  con las colisiones delante—.
+
+## Medición: lo que estaba roto y lo que queda
+
+Malla de 2 m por todo el pueblo, sólo posiciones libres a la altura de crucero (660 puntos):
+
+| Medida | Antes | Después |
+| --- | --- | --- |
+| Recta al nodo más cercano **tapada** (lo que trazaba la guía) | **139 de 660 · 21,1 %** | — |
+| Tramo de ruta que cruza un obstáculo | — | **0 de 2 640** |
+| Posiciones sin ruta a 2,1 m | — | 21 de 660 · 3,2 % |
+| Posiciones sin ruta ni subiendo a 3,6 m | — | **5 de 660 · 0,8 %** |
+| Desde la entrada y las 4 paradas del recorrido | — | 100 % de destinos alcanzables a 2,1 m |
+
+Los cinco rincones que se quedan sin salida (0,8 %) están bajo el tejado del patio, a los que
+sólo se entra volando por encima; allí el recorrido avisa y la mariposa sale volando a mano.
+
+- `node --test tests/*.test.js`: **71/71** (66 + las 5 nuevas de `tests/rutas.test.js`).
+- `npm run build`: OK (59 módulos).
+- `node internal/verificacion/todos.mjs <OUT>` (los 17, con el circuito): **17/17 en verde**.
+  `cdp_paquete1`, que en la entrega anterior falló por una sesión de Chrome caída, aquí pasó en
+  la corrida del barrido —era carga, no producto—.
+- `node internal/verificacion/cdp_circuito.mjs`: **OK** — el recorrido completo 4/4 con la ruta
+  nueva (casa 22,6 s · jardín 16,4 · puerto 26,0 · mirador 25,7; llegadas a 2,1 / 2,1 / 2,4 /
+  5,1 m y progreso 4/4).
+- `cdp_cancelar.mjs` (detener, vuelo manual, «A la plaza», la puerta y el fallback sin 3D) y
+  `cdp_mapa.mjs`: **OK**.
+
+## Lo que se miró del zip y NO se trajo, con el motivo
+
+- **La interfaz modular** (`ui/Hud.js`, `ui/Lectura.js`, `ui/ModoSin3D.js`): es otra
+  implementación de la interfaz que ya existe, y la de aquí tiene más —la capa literaria, el
+  árbol, el glosario, el pergamino, la lluvia, el minimapa— además de una revisión de diseño
+  medida. Partir `main.js` en módulos es razonable, pero no es lo que el zip traía de más.
+- **`crearMapa` de `ui/Hud.js`**: polilíneas y puntos, sin río dibujado, sin casas y sin lugares
+  elegibles. Es un paso atrás del mapa ilustrado que entró ayer.
+- **`anclas.js` (349 líneas)**: un registro único de la geometría del pueblo —casas con sus
+  bloques, muros, vallas, barandas, `COLISION_PROPS`—, con el arte y la física leyendo de la misma
+  tabla. Es una buena idea de diseño y aquí está repartida entre `kit.js` y `places/*`; unificarla
+  es una obra de otro tamaño, no una extracción, y este pueblo tiene piezas que aquel no tiene.
+- **`world/canvas.js`**: un lienzo de mentira para construir la escena sin DOM. Aquí no hace falta:
+  `createVillage` ya se construye en Node en las pruebas y en `internal/scripts/pesar_escena.mjs`.
+- **`data/audioDisponibles.js`**: la lista de MP3 que existen, para no pedir los que faltan. Aquí
+  no sobra ninguno: los 21 clips de `NARRACION` tienen su MP3 en `public/audio/`.
+- **El armazón React/TSX** (`App.tsx`, `bootstrap.tsx`, Tailwind, `vite-plugin-singlefile`): el
+  proyecto es ESM sin framework a propósito, y su `dist/` ya sale autocontenido.
+
+## Quirks que el siguiente no debe repetir
+
+- **El patio tiene tejado con `base`.** A 2,1 y 3,2 m se pasa por debajo; a 4-5 m bloquea. Por eso
+  los rincones bajo el tejado son los únicos sin salida ni subiendo: el planificador pregunta a
+  cada altura y ahí las dos están tapadas. Si algún día se abre el tejado, esos cinco puntos
+  desaparecen solos.
+- **La altura del tramo la manda la ruta, no la mirada.** Durante el recorrido el mando no llega
+  al jugador, así que `TourController.update` escribe `p.alt` con la altura del tramo. `main.js`
+  llama a `player.resetAltitude()` justo después de `startTo`, y no pasa nada porque el primer
+  fotograma del recorrido vuelve a fijarla: si algún día se mueve ese `resetAltitude`, mirar allí.
+- **`routePointsFrom` ya no existe.** Si un guion viejo o una nota lo citan, el sustituto es
+  `planearRuta(world, desde, hasta, { altura, siemprePorGrafo })`, que devuelve puntos `[x,z]` y
+  necesita el mundo construido.
+- **Las esperas del arnés siguen siendo cortas.** Con varios guiones seguidos en el mismo shell se
+  ven fallos de «el clic no alcanzó …» que desaparecen al correrlos de uno en uno (ver el registro
+  anterior). Ante un trío de fallos así, medir de uno en uno antes de tocar el producto.
+
+# Registro anterior · El mapa del pueblo, dibujado (23 septiembre 2026)
+
+Pedido: «extrae lo más valioso que pueda mejorar la experiencia del juego e intégralo en esta
+versión», a partir de `macondo-3d-web-experience.zip`. El zip resultó ser **la generación
+anterior de este mismo proyecto** —la que vivía dentro de la plantilla React/TSX, con
+`src/App.tsx`, Tailwind y `vite-plugin-singlefile`— y casi todo lo suyo está superado por lo que
+hay aquí: su `main.js` (185 líneas) frente al actual (827), su `kit.js` (446) frente al de 1 453,
+su `interaction/` sin oclusión ni eventos. Lo que **no** estaba superado, y es lo que se trajo,
+es una sola cosa, la mejor de aquella entrega: **el mapa del pueblo como ilustración**, con los
+destinos puestos a su lado en vez de debajo.
+
+## Qué se entregó
+
+- **`src/ui/Mapa.js` (nuevo, 275 líneas).** Compone un SVG de capas nombradas —`papel`, `rio`,
+  `vegas`, `caminos`, `plaza`, `muelle`, `casas`, `lugares`, `jugador`, `rotulos`— que dibuja el
+  pueblo sobre papel: el río al oeste con su orilla ondulada y textura de aguas, el muelle real
+  como pasarela sobre el agua, dieciséis casas como referencia, los caminos del grafo en dos
+  pasadas (calzada clara y eje punteado), la plaza, las cinco paradas con su nombre y la flecha
+  del jugador. Nada está escrito a mano: el encuadre se calcula de la caja de lugares y nodos, la
+  orilla sale de la caja de agua de `places/puerto.js` y los caminos, de `EDGES`. Mover un lugar
+  mueve el dibujo.
+- **Cada lugar se elige en el propio dibujo.** Cada punto es un `role="button"` con `tabindex="0"`
+  y nombre accesible («Ir hasta …»), con un área de toque invisible de 46 unidades y activación
+  por clic, toque y Enter. La lista de destinos de abajo se conserva intacta: el mapa y la lista
+  son la misma decisión por dos caminos, y `main.js` les pasa la misma función (`irA`).
+- **Pendiente y visitado se distinguen por forma**, no sólo por color: dos anillos huecos frente
+  a anillo con disco. Es exactamente lo que el informe de `/design checkup` pedía del minimapa
+  (hallazgo 9, «disco lleno frente a anillo … o una leyenda de una línea»); aquí se cumple en el
+  mapa y la leyenda va escrita junto a la ayuda del pie, con `aria-hidden` en los símbolos porque
+  las palabras ya lo dicen.
+- **El panel usa el ancho en vez del alto.** `#map-columnas` pone el dibujo a la izquierda y los
+  destinos a la derecha; en el teléfono vuelven a apilarse. El panel pasó de **480 × 691 px**
+  —clavado en el `85svh`, con la lista siempre por debajo del pliegue— a **760 × 522**, con todo
+  a la vista.
+- **`index.html`:** `#map-canvas` dejó de ser `role="img"` (un rol de imagen poda el subárbol y
+  habría dejado los cinco puntos fuera del teclado y del lector); el SVG se anuncia como grupo.
+  La ayuda del pie dice ahora cómo se elige un lugar y qué significa cada anillo.
+- **`cdp_mapa.mjs` (nuevo) y ya en `todos.mjs`:** mide el panel en **tres tamaños** —escritorio
+  1440 × 900, teléfono 390 × 844 y el borde del corte 700 × 800, que es donde el dibujo se
+  apila— y afirma lo que hace utilizable un mapa: capas, cinco lugares elegibles y enfocables,
+  área de toque, cuerpo de letra, contraste, elección con clic real y con Enter, cambio de estado
+  al visitar un lugar y encaje sin desplazar. Abre el panel esperando a que el chip del HUD tenga
+  caja: medido antes de que el HUD se monte, el clic cae en el vacío y el fallo parece del mapa.
+
+## Verificación de esta entrega
+
+Antes y después, el **mismo guion** contra las dos versiones del panel:
+
+| Medida | Antes | Después |
+| --- | --- | --- |
+| Panel (escritorio) | 480 × 691 px (tope `85svh`) | 760 × 522 px |
+| Lista de destinos a la vista | **no** (bajo el pliegue) | sí |
+| El panel desborda | sí | no |
+| Lienzo | 400 × 405 px, cuadrado | 394 × 279 px, apaisado |
+| Relación del lienzo | 1,00 | 1,44 |
+| Ocupación de la pantalla (lienzo) | 13,8 % | 9,4 % |
+| Capas dibujadas | 0 | 10 |
+| Elementos / trazos | 34 / 21 | 161 / 61 |
+| Lugares elegibles en el dibujo | 0 | 5 (todos enfocables y con nombre) |
+| Área de toque mínima | — | 32,2 px (25,4 en el teléfono) |
+| Cuerpo de la etiqueta | — | 16,1 px (12,7 en el teléfono) |
+| Contraste del nombre | — | 6,64:1 |
+| Móvil 390 × 844: alto del panel | 717 px (desborda) | 703 px (entra) |
+| Borde del corte 700 × 800: alto del panel | — | 668 px (entra) |
+
+El último renglón es el que obligó a poner techo al dibujo: por debajo de 700 px el mapa se apila
+sobre la lista, y sin techo el lienzo pasaba de 314 a **624 px** de ancho —433 px de alto— y se
+comía todo lo que se acababa de ganar. La regla es `max-width:min(520px,48svh)`: el dibujo nunca
+ocupa más de media ventana de alto cuando va apilado, y en el teléfono no cambia nada porque ahí
+manda el ancho del panel.
+
+- `node --test tests/*.test.js`: **66/66**.
+- `npm run build`: OK (misma advertencia de tamaño de chunk ya existente; 58 módulos).
+- `node internal/verificacion/cdp_mapa.mjs`: **OK**; `cdp_paneles.mjs`: **OK**.
+- `node internal/verificacion/todos.mjs <OUT> --rapido`: **15/16**. El único fallo,
+  `cdp_paquete1`, no es de esta entrega: la sesión de Chrome se le cayó a media corrida y dejó un
+  `unsettled top-level await` en la línea 43; vuelto a correr solo pasa (**OK**), y el guion no
+  toca el mapa —abre la silla, la carta y el cuaderno del mirador—. Queda anotado como
+  inestabilidad del arnés bajo dieciséis Chrome seguidos, no como regresión.
+- Capturas: `mapa_escritorio.png` y `mapa_movil.png` (el recorte a tamaño real deja ver las
+  casas, el muelle y los anillos).
+
+## Lo que se miró del zip y NO se trajo, con el motivo
+
+- **La capa React/TSX** (`App.tsx`, `main.tsx`, `index.css`, `utils/cn.ts`, Tailwind,
+  `vite-plugin-singlefile`): el proyecto actual es ESM sin framework y su README ya razona por
+  qué. Traerla sería reescribir la interfaz entera para perder la mitad de las funciones que la
+  capa literaria añadió después (índice, árbol, glosario, pergamino, lluvia).
+- **El juego de 18 iconos SVG y la marca de mariposa** (`ButterflyMark`): bonitos y a mano, pero
+  el HUD actual son fichas de texto que ya pasaron una revisión de maquetación —el informe del
+  checkup midió colisiones y alto— y meter iconos en once botones habría movido esa maquetación
+  sin un motivo que la justifique.
+- **`internal/capture.mjs` (Playwright)**, **`internal/verify-world.mjs`**: el proyecto tiene
+  `internal/verificacion/` con 19 guiones CDP, un arnés con puerto libre y perfil limpio, y
+  `internal/scripts/pesar_escena.mjs`. Los del zip son el antecesor de eso.
+- **`public/audio/manifest.json`**: quedó como `{"clips":{}}`; la versión actual no lee ningún
+  manifiesto en tiempo de ejecución (`data/narracion.js` arma la URL del MP3 directamente).
+- **`docs/avatar-y-vuelo.md` y `docs/direccion-artistica.md`**: su contenido está en
+  `docs/SPEC-MARIPOSA-AVATAR.md`, `docs/SPEC-RECORRIDO-3D.md` y `docs/SPEC-PUEBLO-VIVO.md`, más
+  al día.
+- **`tests/arquitectura|controles|segundo-paquete.test.js`**: son los mismos que
+  `tests/architecture|controls|second-package.test.js`, renombrados.
+
+## Quirks que el siguiente no debe repetir
+
+- **El `font-size` de un texto SVG no está en píxeles de pantalla.** Se declara en unidades de
+  usuario: el guion leía «23 px» mientras en el teléfono se veían 12,5. El factor real sale de
+  `getScreenCTM().a`. Cualquier afirmación sobre lo que se lee o lo que se toca tiene que pasar
+  por ahí, no por `getComputedStyle().fontSize`.
+- **Nada de comillas invertidas dentro de una plantilla que se manda a `Runtime.evaluate`.** El
+  guion de `s.js` es una plantilla de JS: una comilla invertida en un comentario la cierra y el
+  error que sale («missing ) after argument list») apunta al inicio del archivo, no al comentario.
+- **El encuadre del lienzo se calibra por el ancho más estrecho, no por el de escritorio.** El
+  cuerpo de letra y el área de toque están puestos para el teléfono de 390 (unos 314 px de
+  lienzo); por eso en escritorio el mapa se ve con etiquetas grandes. Es deliberado: al revés, en
+  el teléfono no se leía.
+- **El mapa no marca el patio a propósito.** El patio no es destino de la lista —se entra por la
+  casa— y el mapa marca los cinco lugares a los que se puede ir. No es un olvido.
+- **`tests/controls.test.js`, la cámara y el muro, es inestable de nacimiento.**
+  `PlayerController` lee `performance.now()` (línea 192), así que la prueba depende del reloj de
+  pared: en una de seis corridas de esta sesión falló con `la cámara atravesó el muro: 4,52`, y
+  las otras cinco dio 66/66. No es de esta entrega —no se tocó el controlador— y no se arregló
+  aquí: queda anotado para quien quiera volverlo determinista.
+- **El arnés tiene esperas fijas y se cae bajo carga.** Con tres guiones seguidos en el mismo
+  shell —y con la otra sesión lanzando Chrome a la vez—, `cdp_mapa`, `cdp_paneles` y `cdp_novela`
+  fallaron los tres con «el clic no alcanzó …» / «queda bajo el pliegue», y los tres pasaron al
+  correrlos de uno en uno. No era el producto: es que `s.clic` reintenta cinco veces con 400 ms y
+  bajo SwiftShader el primer fotograma puede tardar más. `abrirMapa()` en `cdp_mapa.mjs` ya espera
+  a que el chip tenga caja con tope de 25 s y reintenta diez veces; los demás guiones siguen con
+  la espera corta. Si vuelve a verse un trío de fallos así, medir de uno en uno antes de tocar
+  nada.
+- **Hay trabajo de otra sesión sin commitear en este mismo árbol, y se movió mientras se
+  trabajaba.** Al empezar esta entrega venían modificados `src/world/places/hielo.js`, `README.md`
+  e `internal/HANDOFF.md` (este archivo), y había un `_tmp_recorrido.mjs` suelto en la raíz —que
+  esa sesión ya retiró por su cuenta—. A media sesión esa sesión movió además el botón
+  «▶ Escuchar» dentro del panel de lectura en `index.html`, de modo que ese archivo lleva ahora
+  **las dos cosas**: el mapa de aquí y el «Escuchar» de allí. No se pisó nada —cada escritura de
+  aquí releyó el archivo antes de tocar— y el estado combinado está verificado (66/66, build y
+  `cdp_mapa` en verde). `hielo.js` sigue con sus cambios sin commitear y sin revisar desde aquí.
+  Quien cierre el árbol, que separe las tres cosas.
+
+# Registro anterior · La capa literaria: el pueblo dice qué es del libro (23 septiembre 2026)
+
+Pedido: «tienes el libro disponible en el entorno, léelo y dame ideas para mejorar los recursos»
+y, en seguida, «hazlos con subagentes». Se leyó **Cien años de soledad completa** (20 capítulos
+de la edición ilustrada del entorno) y se implementó el puente entre la novela y la experiencia,
+repartido en siete subagentes en paralelo sobre archivos nuevos, con contrato e interfaz
+congelados en `internal/PLAN-RECURSOS-NOVELA.md`. Diagnóstico, ideas y lo que queda:
+`docs/IDEAS-RECURSOS.md`.
+
+## Qué se entregó
+
+- **La ficha «En la novela» de las ocho estaciones** (`src/data/novela.js`): 120-180 palabras en
+  palabras propias, con capítulo, tres datos verificables y fuente. Se lee en el panel de lectura,
+  después de la glosa y antes de «Continuar».
+- **El sello de origen** (`crearSelloOrigen`, `src/ui/NovelaPanel.js`): «De esta instalación»
+  junto a nuestra glosa y «De la novela» dentro de la ficha. Era el hueco más grave: hasta hoy
+  un visitante no podía saber qué inventó el pueblo (el faro, el reloj, la espiral) y qué viene
+  del libro. Ninguna cita literal nueva: la única transcripción sigue siendo la de Remedios.
+- **Lo que cuenta la novela** (`INDICE_NOVELA`, panel `#indice`): los veinte capítulos con sus
+  hechos y las estaciones que los rozan, más la nota de atribución. Se abre desde una lectura y
+  desde la Ayuda.
+- **El árbol de los Buendía** (`src/data/arbol.js`, `src/ui/ArbolPanel.js`): 20 personas, siete
+  generaciones, los tocayos se resaltan al enfocar, y el cierre de la estirpe. Se abre desde el
+  mapa. Trazado propio: las genealogías de la edición ilustrada tienen derechos.
+- **Palabras del pueblo** (`src/data/palabras.js`, `crearCuadernoPalabras`): 23 voces del Caribe
+  y del libro con significado, capítulo y buscador; se abre desde el cuaderno. Nueve de ellas no
+  aparecen en la novela y lo dicen («uso general del Caribe colombiano») en vez de inventar capítulo.
+- **El pergamino del paseo** (`src/ui/Pergamino.js`): el cuaderno del mirador se relee como el
+  documento que ya estaba escrito; recoge los títulos de lo vivido, con fecha, sin volcar las
+  frases crudas del visitante.
+- **Lluvia del libro** (`src/world/lluvia.js` + botón en la Ayuda): el aguacero del capítulo 16,
+  niveles 0/1/2, 1 260 triángulos y 2 llamadas en aguacero, estático con `prefers-reduced-motion`
+  y apagado por defecto (0 triángulos).
+- **Dos estaciones nuevas del libro**, con su ficha, su encuentro, su pieza y su audio:
+  `hielo` (la carpa de la plaza, caps. 1 y 11) y `pescaditos` (el taller del patio, caps. 6, 9 y
+  13 — dos pescaditos al día, veinticinco y a fundir: verificado en el libro). Piezas:
+  `src/world/places/hielo.js` (1 474 triángulos) y `places/pescaditos.js` (1 827).
+- **Material docente**: `docs/GUIA-DOCENTE.md`, `docs/FICHA-ESTUDIANTE.md`, `docs/RUBRICA.md` y
+  los imprimibles `public/imprimibles/guia-docente.html` y `ficha-estudiante.html` (HTML
+  autónomos, sin JS ni recursos externos), enlazados desde la Ayuda.
+
+## Verificación de esta entrega
+
+- `node --test tests/*.test.js`: **66/66** (7 nuevas en `tests/novela.test.js`: ficha por
+  estación sin huérfanas, límites de la glosa, índice de veinte capítulos, árbol consistente,
+  glosario, pergamino determinista y piezas nuevas exportadas).
+- `npm run build`: OK, JS **216,73 kB gzip** (misma advertencia de tamaño de chunk ya existente).
+- `node internal/verificacion/todos.mjs <OUT>`: **16/16** guiones en corridas separadas, incluido
+  **`cdp_novela.mjs`, nuevo y ya en la lista**: las dos lecturas nuevas por el camino real
+  (posarse, «Explorar», ficha con sellos, capítulo, datos y fuente), el índice con sus veinte
+  entradas, el árbol con tocayos resaltados al enfocar, el cuaderno con su buscador, el
+  pergamino, la lluvia encendida y apagada con el pueblo en vuelo, y la ficha en móvil 390×844.
+  Aviso: en la corrida encadenada, con otro banco de pruebas corriendo en el mismo equipo, seis
+  guiones fallaron por clics perdidos y por el suelo de FPS (`cdp_altura`, `cdp_camara`,
+  `cdp_cancelar`, `cdp_narracion`, `cdp_novela`, `cdp_rendimiento`); repetidos de uno en uno,
+  los seis pasan. `cdp_novela` tardó 38,7 s solo y 145,9 s con la máquina en disputa.
+- `cdp_metricas` / `cdp_rendimiento`: plaza **350 llamadas · 144 405 triángulos** (techo 150 000);
+  peor encuadre del banco **5,9 FPS** (suelo 5, SwiftShader) en corrida a solas.
+- Capturas: `novela_ficha.png`, `novela_indice.png`, `novela_arbol.png`, `novela_palabras.png`,
+  `novela_lluvia.png`, `novela_movil.png`.
+
+## Correcciones de fidelidad que encontró la lectura del libro
+
+- La lectura del tren decía que llegó «un sábado de madrugada» y que de los vagones bajaron
+  «buhoneros» con cacerolas: la novela lo trae **adornado de flores, con ocho meses de retraso y
+  a Aureliano Triste saludando desde la locomotora** (cap. 11), y los muebles y utensilios llegan
+  en **carretas de bueyes** con mercachifles (no existe «buhoneros» en el libro). La ficha lo
+  cuenta como es; el cuerpo de la lectura sigue igual para no invalidar su MP3.
+- La lectura de la plaza decía que nadie recordaba quién fundó Macondo. La fundación sí se cuenta:
+  la travesía de veintiséis meses, la muerte de Prudencio Aguilar y el sueño de la ciudad de
+  espejos (cap. 2). Lo dice la ficha; el cuerpo queda como estaba, por la misma razón.
+- Las dos se corrigen de verdad cuando se toque el audio: editar `content.js` y volver a correr
+  `node internal/scripts/generar_audio.mjs` (solo regenera `lectura-llegada` y `lectura-tren`).
+
+## Quirks que el siguiente no debe repetir
+
+- **Ninguna `PointLight` nueva.** El hielo traía una y el peor encuadre del banco cayó de 5,9 a
+  **4,5 FPS** (por debajo del suelo de 5): una luz más obliga a recompilar los materiales del
+  pueblo entero. Se cambió por emisión —el hielo más dos discos aditivos que laten— y volvió a
+  **5,9**. El brillo frío no necesita una luz; medirlo antes de añadir otra.
+- **Lo nuevo dentro de un diálogo se pone ANTES de lo largo.** Tres controles quedaron fuera del
+  área visible al crecer sus paneles: «▶ Escuchar» en la lectura (lo cazó `cdp_narracion`), el
+  botón del árbol al pie del mapa y «Reiniciar recorrido» en la ayuda. Un elemento con centro
+  fuera del recorte del diálogo no recibe clic real: el guion lo dice como «el clic no alcanzó».
+- **Un `id` repetido rompe el cableado en silencio**: `#toggle-lluvia` llegó a existir dos veces
+  (cajón y ayuda) y el manejador se enlazaba solo al primero. Al mover un control, borrarlo del
+  sitio viejo, no copiarlo.
+- **El banco no se comparte.** Con otro Chrome corriendo a la vez (otra sesión del mismo repo),
+  los clics reales se pierden y aparecen fallos falsos («el clic no alcanzó…», `JSON.parse` de
+  `[object Object]`). Se corrió de uno en uno; con la máquina cargada hubo que repetir dos
+  guiones. Los Chromes del arnés se limpian con `pkill -9 -f perfil-arnes`.
+- La plaza está a **5 600 triángulos del techo** (144 405 de 150 000). Antes de añadir props a la
+  vista de la plaza, medir con `cdp_metricas`; el detalle barato va instanciado o no entra.
+
+## Próximo agente
+
+- **B7 del plan**: llevar el tren amarillo al puerto (vía, estación mínima, una llegada por
+  visita) y el «no hubo muertos» del capítulo 15 como lectura de profundización, con revisión
+  editorial aparte. Es el material más potente y el más sensible.
+- **B5**: la peste del olvido como mecánica (hoy solo existe el glosario y la historia de las
+  etiquetas: borrar los nombres y volver a ponerlos).
+- Completar el índice cuando entren estaciones nuevas: `tests/novela.test.js` exige ficha para
+  cada estación, así que una estación sin ficha rompe la suite (a propósito).
+- Pendientes heredados: oclusión real (`sightBlocks`), métricas en dispositivo real, conmutador
+  manual de modo bajo.
+
+---
+
+
 
 Continúa la entrega del vuelo (el ratón gira, WASD vuela, ningún lugar queda cercado). El
 pendiente que quedaba en el HANDOFF era este: la cámara en tercera persona no colisionaba con
@@ -33,8 +386,14 @@ nada y con más sitios a los que volar había más dónde meterse.
   y pasa por encima de lo bajo).
 - `cdp_camara` OK; `cdp_altura` reescrito al diseño vigente (el clic vuela sin capturar, el
   chip «Vista libre» captura y marca `aria-pressed`, la mira y el aviso aparecen, giro por
-  `pointermove`, altura con la mirada, llegada al mirador, invariantes) OK; `cdp_fisica`,
-  `cdp_lectura`, `cdp_paneles`, `cdp_jugabilidad` y el resto de la batería, verdes.
+  `pointermove`, altura con la mirada, llegada al mirador, invariantes) OK.
+- Batería completa (`todos.mjs`, 15 guiones con `cdp_altura` y `cdp_camara` ya dentro):
+  **13/15**. Los dos que fallaron —`cdp_cancelar` y `cdp_narracion`— no fallan por aserción
+  sino por el cuelgue intermitente de la página que ya está documentado en este archivo: el
+  `esperar` queda colgado y `Runtime.evaluate` devuelve `undefined`. Sondas A/B: el recorrido
+  con voz se hizo cuatro veces con el recorte de cámara activo sin morir, y muere igual con el
+  recorte neutralizado desde la consola, así que no es de esta entrega. Ambos **pasan al
+  repetirlos solos**.
 
 ## Quirks que el siguiente no debe repetir
 

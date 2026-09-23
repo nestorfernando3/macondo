@@ -6,6 +6,21 @@ Gabriel García Márquez.
 ## Ejecutar
 Desde esta carpeta: `npm ci` y `npm run dev`. Abrir la dirección que muestra Vite.
 Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html con file://.
+Pruebas: `npm test` — los 71 casos de `tests/*.test.js` corren en Node, sin navegador.
+
+## Publicado
+El mismo `dist/` sirve en los dos destinos, porque el build usa `base: './'` (vite.config.js) y
+sus rutas son relativas: vale en la raíz de un dominio y bajo un subcamino.
+
+- **GitHub Pages:** https://nestorfernando3.github.io/macondo/ — lo despliega
+  `.github/workflows/pages.yml` (pruebas + build + `actions/deploy-pages`) en cada empuje a
+  `main`, o a mano desde la pestaña Actions. El entorno es `github-pages`.
+- **here.now:** https://jade-bamboo-g745.here.now/ — se republica tras `npm run build` con el
+  guion de publicación de here.now sobre ese mismo slug (el enlace es estable y es el que
+  imprime el código QR de la guía docente).
+
+Los dos publican lo que hay en el árbol de trabajo cuando se construye; ninguno construye por su
+cuenta salvo Pages, que corre `npm ci && npm test && npm run build` en el runner.
 
 ## Cómo se recorre
 - **Usted es una mariposa amarilla.** Vuela con altura automática sobre el terreno
@@ -87,6 +102,17 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   el destino queda marcado con un anillo dorado. Y al quedarse quieto en un lugar nuevo, la
   voz lo cuenta sola: antes había que pedir «guiarme» para oír el pueblo, y quien entraba sin
   pulsar nada lo encontraba mudo.
+- **El mapa del pueblo** (`src/ui/Mapa.js`) dejó de ser el esquema de líneas y puntos con los
+  nombres en cuerpo diminuto. Ahora el pueblo se dibuja sobre papel: el río al oeste con su
+  orilla real, el muelle sobre el agua, las casas como referencia, los caminos del grafo y las
+  cinco paradas. Cada lugar se elige **en el propio dibujo** —ratón, toque o Enter— y la lista de
+  destinos sigue al lado, así que el mapa y la lista son la misma decisión por dos caminos.
+  Pendiente y visitado se distinguen por **forma** —dos anillos huecos frente a anillo con
+  disco— y no sólo por color. Nada se escribe a mano: el encuadre sale de la caja del pueblo y
+  las capas de `data/locations.js` y de la caja de agua del puerto, de modo que mover un lugar
+  mueve el dibujo. El panel pasó de 480 × 691 px a 760 × 522 en escritorio (y de 717 a 703 de
+  alto en el teléfono), con la lista de destinos **a la vista sin desplazar**: antes quedaba
+  siempre por debajo del pliegue.
 - **Remedios, la bella:** sube sola sobre el tendal de bramante del jardín, con las sábanas
   aleteando a su lado, y se pierde en el aire alto. La tarde del capítulo 12 se repite en un
   ciclo de 62 s: sube de 2,6 a 32,8 m y se apaga por los dos extremos, así que el reinicio del
@@ -104,11 +130,39 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   `docs/SPEC-PUEBLO-VIVO.md`.
 
 
+## La capa literaria: lo que cuenta la novela
+El pueblo es una interpretación; el libro es otra cosa, y la experiencia ahora lo dice.
+- **Ficha «En la novela»** en las ocho estaciones: 120-180 palabras en palabras propias y con
+  el capítulo citado (`src/data/novela.js`). La glosa que ya existía va marcada con el sello
+  «De esta instalación» y la ficha con «De la novela», para que nadie confunda lo que escribió
+  García Márquez con lo que inventó el pueblo. Ninguna cita literal: la única transcripción
+  sigue siendo la de la estación del tendal.
+- **Las dos estaciones nuevas del libro:** la carpa del hielo junto a la plaza (capítulos 1 y
+  11) y el taller de los pescaditos de oro en el patio (capítulos 6, 9 y 13). Las mallas viven
+  en `src/world/places/hielo.js` y `places/pescaditos.js`; sus anclas, en `encounters.js`.
+- **Lo que cuenta la novela** (Ayuda, y desde cualquier lectura): el índice de los veinte
+  capítulos, cada uno con sus hechos y las estaciones que lo rozan.
+- **Árbol de la familia Buendía** (desde el mapa): siete generaciones, los nombres repetidos
+  —al enfocar un tocayo se resaltan todos— y el final de la estirpe.
+- **Palabras del pueblo** (desde el cuaderno): 23 voces del Caribe y del libro, con su
+  significado, su capítulo y un buscador.
+- **El pergamino del paseo** (cuaderno del mirador): lo que el visitante dejó escrito se lee
+  al final como si ya estuviera escrito desde antes.
+- **Lluvia del libro** (Ayuda): el aguacero del capítulo 16 —cortinas de gotas, salpicaduras y
+  velo gris—, apagado por defecto, estático con `prefers-reduced-motion` y sin sombras.
+- **Material docente imprimible:** `public/imprimibles/guia-docente.html` y
+  `ficha-estudiante.html` (se sirven tal cual, sin build), más `docs/GUIA-DOCENTE.md`,
+  `docs/FICHA-ESTUDIANTE.md` y `docs/RUBRICA.md`. Las ideas que originaron todo esto y lo que
+  queda pendiente: `docs/IDEAS-RECURSOS.md` e `internal/PLAN-RECURSOS-NOVELA.md`.
+
 ## Arquitectura
 - `src/main.js` composición y eventos; `src/core/Experience.js` renderer/ciclo/resize.
 - `src/navigation/`: PlayerController (única autoridad de vuelo y cámara: hover sobre el
   terreno, inercia, cámara perseguidora, destino por toque), InputController,
-  WalkableWorld (colisiones/alturas), TourController (grafo y guía).
+  WalkableWorld (colisiones/alturas, más `pathClear` —«¿se puede ir en recta de aquí a allí a
+  esta altura?»—), RoutePlanner (el plan de vuelo: enlace al grafo por un nodo con la recta
+  despejada, Dijkstra sobre las aristas comprobadas, y salida por el nodo del destino) y
+  TourController (la guía). `data/locations.js` es sólo el registro del grafo: no traza rutas.
 - `src/world/kit.js`: materiales, geometrías compartidas, acumulador de instancias y el
   vocabulario de piezas (casa, palmera, farol, portal…). `src/world/flora.js`: el vocabulario
   floral (pétalo, corola, brizna) y sus constructores. `src/world/places/*.js`: los cinco
@@ -122,6 +176,12 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   el lecho de viento, río y aves; `src/world/beacon.js` faro de destino y `src/world/postal.js`
   captura de postales.
 - `src/data/`: registro único de lugares y caminos; textos literarios separados del motor.
+- `src/ui/Mapa.js`: el mapa ilustrado del panel. Compone un SVG de capas nombradas (`papel`,
+  `rio`, `vegas`, `caminos`, `plaza`, `muelle`, `casas`, `lugares`, `jugador`, `rotulos`) a
+  partir de `data/locations.js` y de la caja de agua del puerto; no sabe nada del recorrido —el
+  «qué hacer al elegir un lugar» se lo pasa `main.js` como función—. Los medidores que dependen
+  del tamaño —cuerpo de las etiquetas y área de toque— viven aquí, calibrados para el ancho más
+  estrecho en que se dibuja (el teléfono de 390, unos 314 px de lienzo).
 - `src/interaction/` proximidad.
 - Herramientas: `internal/scripts/pesar_escena.mjs` (reparto de triángulos sin navegador),
   `internal/verificacion/cdp_metricas.mjs` (llamadas y capturas por lugar),
@@ -138,6 +198,9 @@ Remedios, la bella (el tendal del jardín): se transcribe íntegra en el campo `
 estación, con atribución a su capítulo, separada de la glosa en el panel —bloque propio y serif,
 bajo el rótulo «Del libro»— y **fuera de la narración hablada**, porque el audio se genera y se
 distribuye como MP3 y grabarlo sería una reproducción mucho más pesada que esta cita impresa.
+Todo lo demás que la experiencia cuenta de la novela son **glosas propias** —las fichas «En la
+novela», el índice de capítulos, el árbol de los Buendía y el glosario—, con el capítulo citado
+y sin comillas del libro.
 El paisaje es una interpretación artística, no una reconstrucción geográfica.
 Especificación: `docs/SPEC-RECORRIDO-3D.md`. Estado y pendientes: `internal/HANDOFF.md`.
 Avatar de mariposa (implementado): `docs/SPEC-MARIPOSA-AVATAR.md`.
@@ -151,9 +214,23 @@ Avatar de mariposa (implementado): `docs/SPEC-MARIPOSA-AVATAR.md`.
   Ni el clic ni el arrastre capturan nada.
 - El recorrido guiado devuelve la altura y la mirada a crucero al arrancar, porque el relato y
   las llegadas están escritos para verse desde ahí.
+- **La guía traza por donde se puede volar** (`src/navigation/RoutePlanner.js`): entra y sale del
+  grafo por un nodo al que de verdad se llega en línea recta y sólo usa aristas despejadas a la
+  altura de vuelo. Antes el primer tramo se trazaba al nodo más cercano sin mirar qué había en
+  medio —y esa recta está tapada en **una de cada cinco** posiciones libres del pueblo—, así que
+  guiar desde detrás de una casa mandaba la mariposa contra ella. Si a 2,1 m no hay salida —el
+  jugador entró volando a un corral de tapias, como el patio de la casa— el primer tramo se vuela
+  a 3,6 m, sobre la tapia, y luego baja a la calle. Cuando ni así hay camino, se dice en la franja
+  de estado y «Plaza» devuelve a la plaza.
 - Frenado más inmediato, rechazo de destinos bloqueados y cancelación del vuelo cuando una pared impide avanzar. Usa el mapa para los trayectos entre lugares.
 - El indicador muestra la siguiente parada pendiente y «Guiarme» comienza por ella.
-- Verificación: `node --test tests/*.test.js`; con Vite en 5175, `node internal/verificacion/cdp_jugabilidad.mjs`, `node internal/verificacion/cdp_camara.mjs` (la perseguidora no se mete en el pueblo) y `node internal/verificacion/cdp_altura.mjs` (mira en el centro, «Vista libre» captura el puntero, altura con la mirada y sus topes, llegada volando a la meseta, paso por encima de lo bajo y choques de la interfaz en móvil).
+- Verificación: `npm test` (71 pruebas; la capa literaria vive en
+  `tests/novela.test.js` y las rutas del recorrido, en `tests/rutas.test.js`); con Vite en 5175,
+  `node internal/verificacion/todos.mjs` corre todos
+  los guiones —entre ellos `cdp_novela.mjs`, que prueba las dos estaciones nuevas, la ficha, el
+  índice, el árbol, el cuaderno de palabras, el pergamino y la lluvia, y `cdp_mapa.mjs`, que mide
+  el panel del mapa en escritorio y en teléfono—, más `cdp_jugabilidad.mjs`,
+  `cdp_camara.mjs` y `cdp_altura.mjs`.
 
 ## Seis pequeños asombros y agua en movimiento
 Busca las semillas doradas de la entrada, la fuente, el patio, el jardín, el muelle y el mirador. Al acercarte, cada una revela una frase original que se conserva en **Hallazgos**. El álbum ofrece pistas y acceso al cuaderno; el recorrido guiado también permite recogerlas. **Recuerdo** descarga una postal del lugar actual.

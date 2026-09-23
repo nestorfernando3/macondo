@@ -377,10 +377,23 @@ export function crearHielo(ctx) {
   // ============================================================
   // 8. Luz del hielo, goteo y pose (actualizar)
   // ============================================================
-  // Una luz puntual sin sombra devuelve el brillo frío que la tarde caribeña no da.
-  const luzHielo = new THREE.PointLight(0xbfe7f2, 1.3, 5.5, 2);
-  luzHielo.position.set(0, TABLERO + .5, CF);
-  grupo.add(luzHielo);
+  // El brillo frío que la tarde caribeña no da, sin encender una luz más: una `PointLight`
+  // obliga a recompilar los materiales del pueblo entero y cuesta fotogramas en el banco (el
+  // suelo es 5 FPS), así que el halo se resuelve con emisión —dos discos aditivos, arriba y al
+  // frente, más la emisión del propio hielo— y late en `pose`.
+  const haloArriba = new THREE.Mesh(
+    new THREE.CircleGeometry(.62, 24),
+    new THREE.MeshBasicMaterial({
+      color: 0xbfe7f2, transparent: true, opacity: .16,
+      blending: THREE.AdditiveBlending, depthWrite: false,
+    })
+  );
+  haloArriba.rotation.x = -Math.PI / 2;
+  haloArriba.position.set(0, TABLERO + .46, CF);
+  const haloFrente = haloArriba.clone();      // comparte material: laten juntos
+  haloFrente.rotation.set(0, 0, 0);
+  haloFrente.position.set(0, TABLERO + .22, CF + .32);
+  grupo.add(haloArriba, haloFrente);
 
   function posarGotas(t) {
     gotas.forEach((g, i) => {
@@ -404,10 +417,10 @@ export function crearHielo(ctx) {
   }
 
   function pose(t) {
-    // El hielo respira: la emisión y la luz laten juntas.
+    // El hielo respira: la emisión y el halo laten juntos.
     const latido = Math.sin(t * .9);
-    mats.hielo.emissiveIntensity = .5 + .16 * latido;
-    luzHielo.intensity = 1.3 + .3 * latido;
+    mats.hielo.emissiveIntensity = .58 + .16 * latido;
+    haloArriba.material.opacity = .15 + .05 * latido;
     posarGotas(t);
     posarSudor(t);
     const s = Math.min(CHARCO_MAX, CHARCO_MIN + t * CHARCO_VEL);
