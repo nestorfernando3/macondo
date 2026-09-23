@@ -41,15 +41,16 @@ y se re-verificó todo lo verificable en este entorno.
 - `.github/workflows/pages.yml` (nuevo): publica en GitHub Pages (npm ci + npm test + build +
   `actions/deploy-pages`), disparado por push a `main`/rama de trabajo o a mano.
 
-## Publicación en GitHub Pages (estado)
+## Publicación en GitHub Pages (hecha)
 
-El flujo corre en verde hasta el paso de Pages: checkout, `npm ci`, `npm test` (66/66) y build
-pasan en el runner; `configure-pages` falla porque el sitio Pages del repositorio aún no existe
-y ni el token de este entorno ni el GITHUB_TOKEN del flujo tienen permiso de administración para
-crearlo (HTTP 403 «Resource not accessible by integration»). Falta un solo clic del dueño del repo:
-**Settings → Pages → Build and deployment → Source: «GitHub Actions»**. Hecho eso, relanzar con
-`gh run re-run <run> --failed` o desde la pestaña Actions; la URL quedará en
-`https://nestorfernando3.github.io/macondo/`.
+El paseo está en vivo en **https://nestorfernando3.github.io/macondo/** (despliegue del
+entorno `github-pages` en estado *success*, verificado por API el 23 de septiembre de 2026).
+El flujo corre pruebas + build en el runner y publica con `actions/deploy-pages` cada vez que
+se empuja a `main` o a la rama de trabajo. Lo que hizo falta del dueño del repo (una sola vez):
+habilitar Pages con fuente «GitHub Actions» y permitir la rama en Settings → Environments →
+`github-pages` → Deployment branches (mi token no tiene administración: 403 en ambos pasos).
+Alternativa here.now preparada en `internal/scripts/publicar_herenow.mjs` (desde este sandbox
+here.now no es alcanzable; se corre en cualquier máquina con internet).
 
 ## Limitación de este entorno (no del producto)
 

@@ -7,11 +7,11 @@ Gabriel García Márquez.
 Desde esta carpeta: `npm ci` y `npm run dev`. Abrir la dirección que muestra Vite.
 Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html con file://.
 
-**Publicación:** el paseo vive en https://nestorfernando3.github.io/macondo/ — lo despliega
+**Publicado:** https://nestorfernando3.github.io/macondo/ — lo despliega
 `.github/workflows/pages.yml` (pruebas + build + `actions/deploy-pages`) al empujar a
 `main` o a la rama de trabajo; el build usa `base: './'`, así que el mismo `dist/` sirve
-en la raíz y bajo el subcamino de Pages. Si el sitio aún no existe: Settings → Pages →
-Source: «GitHub Actions».
+en la raíz y bajo el subcamino de Pages. Alternativa here.now:
+`node internal/scripts/publicar_herenow.mjs` tras `npm run build`.
 
 ## Cómo se recorre
 - **Usted es una mariposa amarilla.** Vuela con altura automática sobre el terreno
