@@ -22,7 +22,7 @@ export const PALETA = {
   turquesa: 0x1d6a6a, turquesaClaro: 0x2f8f8b, madera: 0x8a5a3b, maderaClara: 0xb08356,
   teja: 0xc4643f, tejaHonda: 0xa04a2b, tierra: 0xb99a6d, tierraHonda: 0x9a7b50,
   piedra: 0xcfc3ab, piedraHonda: 0xaea289, hoja: 0x2e6b3f, hojaClara: 0x4d8b57,
-  hojaSeca: 0x83914a, palma: 0x3d7a44, tronco: 0x8f7a5e, agua: 0x3f9fa8,
+  hojaSeca: 0x83914a, hojaHonda: 0x1f4a2c, palma: 0x3d7a44, tronco: 0x8f7a5e, agua: 0x3f9fa8,
   flor: 0xe88fb4, florRoja: 0xd4574a, amarillo: 0xf5c542, blanco: 0xfbf6ea,
   banco: 0x6e8f7c, hierro: 0x3d4a49, vidrio: 0x33545c, lona: 0xf0e3c8, arena: 0xd9c49a,
 };
@@ -31,6 +31,11 @@ export const PALETA = {
 // proyecta: cada lote instanciado se dibujaría entero otra vez en el mapa de sombras y no
 // se nota en pantalla. El spec lo pide así: «evitar sombras en cada objeto».
 const CON_SOMBRA = new Set(['estuco', 'estucoClaro', 'coral', 'teja', 'tejaHonda', 'hoja', 'hojaClara', 'tronco', 'palma']);
+
+// Cuánto se estrecha un tramo de madera del árbol de la base a la punta. Vive aquí porque la
+// geometría y quien encadena tronco, ramas y horquillas tienen que decir el mismo número: si
+// se separan, la junta deja escalón y el árbol se lee como tubos apilados.
+const RADIO_AHUSADO = .72;
 
 // ---------- Geometrías de perfil propio (se cachean por medidas) ----------
 const cacheGeo = new Map();
@@ -178,6 +183,15 @@ export function crearKit(scene, world) {
     // radio con radio, así que la silueta es una sola línea continua que se estrecha y se ensancha
     // en vez de la escalera de tubos apilados.
     tronco8: new THREE.CylinderGeometry(.52, .48, 1, 8, 1, true),
+    // Madera del árbol: tubo ahusado de ocho caras y cerrado. Cierra porque una rama puede
+    // asomar por el borde de la copa y el corte hueco se vería; ocho caras son treinta y dos
+    // triángulos por tramo —un tronco de tres tramos, cuatro ramas con sus horquillas y seis
+    // contrafuertes caben en la mitad de lo que antes gastaba la sola copa de esferas—.
+    troncoAhusado: new THREE.CylinderGeometry(.5 * RADIO_AHUSADO, .5, 1, 8),
+    // La misma madera para los árboles que se miran de lejos: seis caras y sin tapas, que es
+    // un tercio del precio. El corte abierto no se ve —la punta de una rama muere dentro de la
+    // copa y la del tronco, también— y a diez metros una caña de seis caras es una caña.
+    troncoFino: new THREE.CylinderGeometry(.5 * RADIO_AHUSADO, .5, 1, 6, 1, true),
     cono: new THREE.ConeGeometry(.5, 1, 6),
     esfera: new THREE.SphereGeometry(.5, 8, 6),
     // Baratas para el detalle menudo: humo y polvo no necesitan 80 caras.
@@ -369,8 +383,11 @@ export function crearKit(scene, world) {
     // Vocabulario floral (flora.js): una flor, una mata con tallo, un macizo y un penacho
     // de briznas que se mece. Todo entra por lote()/mecer() y no proyecta sombra.
     flor, mataFlor, macizoFloral, briznas,
-    colisionCaja: (x1, z1, x2, z2) => world.addBox(x1, z1, x2, z2),
-    colisionCirculo: (x, z, r) => world.addCircle(x, z, r),
+    // El cuarto argumento es el remate de la pieza (Y absoluta): por encima de él la mariposa
+    // pasa volando. Sin él, el obstáculo es un muro que llega al cielo. El quinto es su base,
+    // para lo que está en el aire (el tejado de un patio): bloquea de la base al remate.
+    colisionCaja: (x1, z1, x2, z2, alto, base) => world.addBox(x1, z1, x2, z2, alto, base),
+    colisionCirculo: (x, z, r, alto, base) => world.addCircle(x, z, r, alto, base),
   };
 
   // ---------- Piezas ----------
@@ -554,13 +571,15 @@ export function crearKit(scene, world) {
     }
     // Colisión: misma caja envolvente que la versión anterior del pueblo. El cuerpo de la
     // casa también tapa la vista: desde la calle no se explora lo que hay detrás del muro.
+    // El remate es la cumbrera (alero + faldón + caballete), no el alero: por encima del
+    // tejado —y sólo por encima— la mariposa pasa volando.
     const hw = ancho / 2, hd = fondo / 2;
     const pts = [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]].map(([px, pz]) => L(px, pz));
     const caja = [
       Math.min(...pts.map(p => p[0])) - .05, Math.min(...pts.map(p => p[1])) - .05,
       Math.max(...pts.map(p => p[0])) + .05, Math.max(...pts.map(p => p[1])) + .05,
     ];
-    world.addBox(...caja);
+    world.addBox(...caja, aleroY + techoAlto + .25);
     world.addSight(...caja);
   }
 
@@ -657,7 +676,7 @@ export function crearKit(scene, world) {
         { ry: rnd() * TAU + ry, rz: -(1.0 + rnd() * .45), rx: (rnd() - .5) * .4,
           esc: [largo, largo, largo], sombra: false });
     }
-    world.addCircle(x, z, .45);
+    world.addCircle(x, z, .45, alto);        // el tronco: se pasa por encima de la corona
     return { x: cx, z: cz, y: alto };
   }
 
@@ -690,7 +709,241 @@ export function crearKit(scene, world) {
         { ry: a, rz: (rnd() - .5) * .3, esc: [.09, .28 + rnd() * .08, .09], sombra: false });
     }
     lote('cono', 'florRoja', x, yRacimo - .58, z, { rz: Math.PI + (rnd() - .5) * .3, esc: [.12, .24, .12], sombra: false });
-    world.addCircle(x, z, .6);
+    world.addCircle(x, z, .6, alto + .3);
+  }
+
+  // ---------- Árboles ----------
+  // Vocabulario del árbol de hoja ancha: el del tiempo en el jardín, los once de las calles,
+  // los dos de sombra de la plaza y los que se ven en la otra orilla del río.
+  //
+  // Antes un árbol era un poste recto —el mismo radio de arriba abajo— con cuatro tarugos
+  // CENTRADOS en el tronco, que por eso lo atravesaban y asomaban por el otro lado, y once
+  // esferas de hasta tres metros y medio: de cerca la copa se leía como un racimo de globos y
+  // el árbol entero como un poste con bolas. Aquí la madera nace en su base y muere donde nace
+  // la siguiente —tronco, ramas y horquillas casan radio con radio, sin escalón— y la copa son
+  // hojas del vocabulario floral: manojos de láminas con la cara hacia fuera, porque un árbol
+  // se lee por sus hojas y no por lo redondo de sus bultos.
+  //
+  // La copa va en tres pisos de tono, de abajo arriba: verde hondo (lo que mira la mariposa
+  // desde el suelo), el verde de siempre y el claro, que es donde da la sol. El bulto de cada
+  // manojo es lo que impide ver el cielo por dentro de la copa, y el que proyecta la sombra:
+  // las hojas no pagan el mapa de sombras. La copa no lleva colisión —se atraviesa volando,
+  // como siempre—: la del tronco la pone el lugar, que es quien conoce su recorrido.
+  const ejeY = new THREE.Vector3(0, 1, 0);
+  const vDir = new THREE.Vector3(), vCrece = new THREE.Vector3();
+  const vCara = new THREE.Vector3(), vLado = new THREE.Vector3(), vEje = new THREE.Vector3();
+  const base3 = new THREE.Matrix4();
+
+  // Cuaternión que lleva el +y de una pieza a la dirección dada. Va por `lote({ q })` y no por
+  // rx/ry/rz porque el orden de Euler del kit aplica la x al final: una madera inclinada
+  // acababa apuntando al norte del mundo.
+  function hacia(ux, uy, uz) {
+    vDir.set(ux, uy, uz).normalize();
+    cuaternion.setFromUnitVectors(ejeY, vDir);
+    return [cuaternion.x, cuaternion.y, cuaternion.z, cuaternion.w];
+  }
+
+  // Tramo de madera: nace en (bx, by, bz), crece `largo` metros hacia (ux, uy, uz) y se ahusa
+  // según RADIO_AHUSADO. Devuelve el nudo donde termina —y con qué radio—, que es donde nace
+  // el tramo siguiente: así el tronco, las ramas y las horquillas casan radio con radio.
+  function tramo(mat, bx, by, bz, ux, uy, uz, largo, radio, geo = 'troncoAhusado') {
+    const l = Math.hypot(ux, uy, uz) || 1, dx = ux / l, dy = uy / l, dz = uz / l;
+    lote(geo, mat, bx + dx * largo / 2, by + dy * largo / 2, bz + dz * largo / 2,
+      { q: hacia(dx, dy, dz), esc: [radio * 2, largo, radio * 2] });
+    return { x: bx + dx * largo, y: by + dy * largo, z: bz + dz * largo, r: radio * RADIO_AHUSADO };
+  }
+
+  // Ejes propios de una hoja: hacia dónde crece (z), hacia dónde mira (y) y el través (x).
+  // Es lo que permite posar una hoja con DOS direcciones a la vez.
+  function ejesDe(xE, yE, zE) {
+    base3.makeBasis(xE, yE, zE);
+    cuaternion.setFromRotationMatrix(base3);
+    return [cuaternion.x, cuaternion.y, cuaternion.z, cuaternion.w];
+  }
+
+  // Hoja de copa: nace en (hx, hy, hz), crece hacia (gx, gy, gz) y su cara mira a la normal de
+  // la copa en ese punto. `tam` es el largo en metros —el pétalo unidad mide uno— y `ancho` lo
+  // que se ensancha sobre su proporción de flor: una hoja de copa es más redonda que un pétalo,
+  // y con la medida del pétalo la copa se leía como un puñado de cuchillos.
+  function hojaCopa(mat, hx, hy, hz, gx, gy, gz, nx, ny, nz, tam, ancho = 1.25) {
+    vCrece.set(gx, gy, gz).normalize();
+    vCara.set(nx, ny, nz);
+    vCara.addScaledVector(vCrece, -vCara.dot(vCrece)).normalize();   // la cara, ya sin lo que va en la dirección de la hoja
+    vLado.crossVectors(vCara, vCrece);
+    lote('petalo', mat, hx, hy, hz, { q: ejesDe(vLado, vCara, vCrece), esc: [tam * ancho, 1, tam], sombra: false });
+  }
+
+  // Un árbol entero, por su base y su centro. Los números que lo describen son los del dibujo
+  // —hasta dónde sube el tronco, cuánto ocupa la copa, cuántos manojos lleva—, no una receta:
+  // el del jardín se mira a un metro y lleva ramas, helechos y flores; los de la calle, ramas
+  // y copa; los de la otra orilla del río, tronco y copa, que a treinta metros no hay más.
+  function arbol(x, z, {
+    alto = 4.2, radio = .46, copa = 2.05, yCopa = 6.1, altoCopa = 1.5, inclinacion = .13,
+    ramas = 4, bajas = 2, raices = 6, pies = true, manojos = 15, hojas = 4, colgantes = 6,
+    helechos = 0, flores = 0, semilla = 1, madera = 'troncoAhusado',
+    tonos = ['hojaHonda', 'hoja', 'hojaClara'],
+  } = {}) {
+    const rnd = secuencia(semilla);
+
+    // ---------- Tronco ----------
+    // Dos tramos que se ahusan y se inclinan: dos, no tres, porque cada tramo se lleva un 28 %
+    // del radio y con tres el tronco moría en punta —se leía un lápiz afilado, no un árbol—.
+    const eje = [{ x, y: 0, z, r: radio }];
+    let vaX = 0, vaZ = 0;
+    for (let i = 0; i < 2; i++) {
+      vaX += (rnd() - .5) * inclinacion * 2;
+      vaZ += (rnd() - .5) * inclinacion * 2;
+      const nudo = eje[eje.length - 1];
+      eje.push(tramo('tronco', nudo.x, nudo.y, nudo.z, vaX, 1, vaZ, alto / 2, nudo.r, madera));
+    }
+    // El eje del tronco a una altura: como el tronco se inclina, ni las ramas ni los
+    // contrafuertes pueden dar por hecho que el eje está en (x, z).
+    const ejeEn = y => {
+      for (let i = 1; i < eje.length; i++) {
+        const a = eje[i - 1], b = eje[i];
+        if (y <= b.y || i === eje.length - 1) {
+          const t = Math.max(0, Math.min(1, (y - a.y) / (b.y - a.y)));
+          // La `y` interpolada viaja en el nudo, no sólo la `x` y la `z`: quien llama lee
+          // `nodo.y` para saber dónde nace la rama, y sin ella el valor es `undefined` y toda
+          // la cuenta de la madera sale NaN en silencio —la instancia no se dibuja y no hay
+          // error—. Los tres van con el mismo `t`, así que el nudo cae sobre el eje del tronco.
+          return {
+            x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t,
+            z: a.z + (b.z - a.z) * t, r: a.r + (b.r - a.r) * t,
+          };
+        }
+      }
+    };
+
+    // Contrafuertes: raíces que nacen del tronco a media vara del suelo, bajan abriéndose y
+    // siguen por la tierra, cada vez más delgadas. Son lo que ata el árbol al piso cuando la
+    // mariposa lo bordea: antes eran varas delgadas y acostadas, y desde el aire el tronco se
+    // leía clavado en la tierra.
+    for (let i = 0; i < raices; i++) {
+      const a = (i / raices) * TAU + (rnd() - .5) * .8, c = Math.cos(a), s = Math.sin(a);
+      const nace = ejeEn(radio * (1.4 + rnd() * 1.1));
+      const fuera = radio * (1.3 + rnd() * 1);
+      const fin = tramo('tronco', nace.x + c * nace.r * .5, nace.y, nace.z + s * nace.r * .5,
+        c * fuera, -nace.y, s * fuera, Math.hypot(fuera, nace.y), nace.r * .6, madera);
+      // El pie: la raíz sigue por la tierra. Los árboles que se miran de lejos no lo llevan: a
+      // diez metros un pie de medio metro es una raya, y son dos tramos por cada contrafuerte.
+      if (pies) tramo('tronco', fin.x, .08, fin.z, c, -.05, s, radio * (1.1 + rnd() * .9), fin.r, madera);
+    }
+
+    // Ramas: nacen del tronco ya delgado y se abren en horquilla justo bajo la copa. Esa
+    // primera mitad a la vista es lo que hace que la copa se pose en un árbol y no en un poste:
+    // si la horquilla queda escondida, el árbol vuelve a leerse como una lollipop.
+    for (let i = 0; i < ramas; i++) {
+      const a = (i / ramas) * TAU + (rnd() - .5) * .8, c = Math.cos(a), s = Math.sin(a);
+      const nudo = ejeEn(alto * (.62 + rnd() * .14));
+      const abre = .45 + rnd() * .3;
+      const medio = copa * (.6 + rnd() * .18);
+      // Del grosor del tronco, la rama se lleva algo más de la mitad: con el .85 se leían
+      // brazos de candelabro y el nudo se hinchaba donde la rama sale del tronco. El largo va
+      // con la copa, no con el árbol, y las dos hijas siguen subiendo más tiesas de lo que
+      // bajó la madre: la familia —rama y horquilla— no puede salirse del radio de la copa, o
+      // la punta asoma por el borde con el corte a la vista.
+      const rama = tramo('tronco', nudo.x, nudo.y, nudo.z, c * abre, 1, s * abre, medio, nudo.r * .62, madera);
+      tramo('tronco', rama.x, rama.y, rama.z, c * abre * .35, 1, s * abre * .35, medio * (.85 + rnd() * .2), rama.r, madera);
+      tramo('tronco', rama.x, rama.y, rama.z, c * (abre + .25), 1.15 + rnd() * .3, s * (abre + .25), medio * (.8 + rnd() * .2), rama.r * .9, madera);
+    }
+
+    // Ramas bajas: dan profundidad a la copa justo a la altura del vuelo (2,1 m), que es donde
+    // la mariposa pasa junto al tronco. Llevan su manojo de hojas en la punta —y las hojas
+    // nacen un poco más allá—, porque la punta de un tubo cerrado se lee como un leño cortado.
+    for (let i = 0; i < bajas; i++) {
+      const a = 2.2 + i * 2.5 + (rnd() - .5) * .7, c = Math.cos(a), s = Math.sin(a);
+      const nudo = ejeEn(alto * (.34 + rnd() * .1));
+      const punta = tramo('tronco', nudo.x, nudo.y, nudo.z, c * 1.1, .45 + rnd() * .25, s * 1.1, copa * (.55 + rnd() * .2), nudo.r * .5, madera);
+      for (let k = 0; k < 4; k++) {
+        const gx = c + (rnd() - .5), gy = -.1 - rnd() * .7, gz = s + (rnd() - .5);
+        const gl = Math.hypot(gx, gy, gz) || 1;
+        hojaCopa(tonos[1], punta.x + gx / gl * .18, punta.y + gy / gl * .18, punta.z + gz / gl * .18,
+          gx, gy, gz, c, .6, s, copa * (.22 + rnd() * .12));
+      }
+    }
+
+    // ---------- Copa ----------
+    // Manojos repartidos por la cúpula con el paso áureo: el índice por el número de vueltas
+    // reparte sin anillos ni manchas —el azar dejaba claros y puñados—, y el radio se sortea
+    // hacia dentro, así que los manojos se solapan en vez de dejar huecos.
+    const dorado = Math.PI * (3 - Math.sqrt(5));
+    const manojosPuestos = [];
+    for (let i = 0; i < manojos; i++) {
+      const cy = 1 - 2 * ((i + .5) / manojos);             // +1 arriba, −1 abajo
+      const anillo = Math.sqrt(Math.max(0, 1 - cy * cy));
+      const ang = i * dorado + rnd() * .4;
+      const lejos = .6 + rnd() * .42;
+      const hx = x + Math.cos(ang) * anillo * copa * lejos;
+      const hz = z + Math.sin(ang) * anillo * copa * lejos;
+      const hy = yCopa + cy * altoCopa * lejos;
+      // El piso decide el tono: arriba el claro (ahí da la sol), en medio el verde de siempre
+      // y abajo el hondo, que es el que se mira desde el suelo.
+      const piso = cy > .38 ? 2 : (cy > -.34 ? 1 : 0);
+      const tono = tonos[piso];
+      // La normal de la copa en ese punto. El eje y pesa casi el doble porque la copa es más
+      // ancha que alta: una hoja que mirara a la normal de una esfera saldría de canto.
+      vEje.set(hx - x, (hy - yCopa) * (copa / altoCopa), hz - z).normalize();
+      // El cuerpo del manojo: tapa (no se ve el cielo por dentro de la copa) y proyecta la
+      // sombra del árbol. Mide lo que haga falta para que los manojos se solapen —la cuenta
+      // vive aquí y no en quien llama—: con la mitad la copa se leía rala y con el doble salía
+      // una bolsa de naranjas, así que el diámetro sale del número de manojos. `mata` —36
+      // caras— y no `esfera` —80—: la copa se lee por los bultos que tiene, no por lo redondo
+      // de cada uno.
+      const bulto = copa * (3.3 / Math.sqrt(manojos)) * (.85 + rnd() * .28);
+      // El bulto no es una bola: se estira, se achata y gira, y un puñado de bultos alargados
+      // a distinta altura se lee como follaje donde cuatro esferas se leían como cuatro bolas.
+      lote('mata', tono, hx, hy, hz, {
+        ry: rnd() * TAU,
+        esc: [bulto * (.9 + rnd() * .5), bulto * (.68 + rnd() * .3), bulto * (.9 + rnd() * .5)],
+      });
+      // Las hojas van un tono por encima de su bulto: una lámina suelta recibe la luz de canto
+      // y en el verde hondo el borde de la copa se leía como un puñado de cuchillos negros.
+      const tonoHoja = tonos[Math.min(2, piso + 1)];
+      for (let k = 0; k < hojas; k++) {
+        // La hoja nace en la piel del bulto —no en su centro, que la enterraría— y sale hacia
+        // fuera y hacia abajo, que es como cuelgan.
+        const gx = vEje.x + (rnd() - .5) * 1.2, gy = vEje.y - (.15 + rnd() * .5), gz = vEje.z + (rnd() - .5) * 1.2;
+        const sale = bulto * .45;
+        const gl = Math.hypot(gx, gy, gz) || 1;
+        hojaCopa(tonoHoja, hx + gx / gl * sale, hy + gy / gl * sale, hz + gz / gl * sale, gx, gy, gz,
+          vEje.x, vEje.y, vEje.z, copa * (.19 + rnd() * .12));
+      }
+      manojosPuestos.push({ x: hx, y: hy, z: hz, nx: vEje.x, ny: vEje.y, nz: vEje.z, cy });
+    }
+
+    // Colgantes: manojos que caen del borde bajo de la copa. La mariposa vuela a 2,1 m y mira
+    // hacia arriba, y una copa de bultos redondos por debajo se lee como un techo.
+    const bajos = manojosPuestos.filter(m => m.cy < -.05);
+    for (let i = 0; i < colgantes && bajos.length; i++) {
+      const m = bajos[i % bajos.length];
+      for (let k = 0; k < 3; k++) {
+        hojaCopa(tonos[0], m.x + (rnd() - .5) * .6, m.y - copa * (.16 + rnd() * .2), m.z + (rnd() - .5) * .6,
+          m.nx + (rnd() - .5) * .9, -1, m.nz + (rnd() - .5) * .9, m.nx, -.3, m.nz, copa * (.17 + rnd() * .1));
+      }
+    }
+
+    // Flores: el árbol del tiempo florece —de su copa caen los pétalos de la capa de vida—, así
+    // que lleva corolas de verdad repartidas por el borde, que es donde se ven desde el suelo.
+    for (let i = 0; i < flores; i++) {
+      const m = manojosPuestos[Math.floor(((i + .5) / flores) * manojosPuestos.length)];
+      const a = rnd() * TAU, d = copa * .16;
+      flor(kit, m.x + Math.cos(a) * d, m.y + copa * (.1 + rnd() * .12), m.z + Math.sin(a) * d, {
+        color: i % 3 === 2 ? 'blanco' : 'flor', centro: 'amarillo', tamano: copa * (.14 + rnd() * .05),
+        rx: -(.5 + rnd() * .8), ry: a, geometria: 'corolaSilvestre',
+      });
+    }
+
+    // Helechos y bejucos en la corteza: el tronco del trópico no es un caño liso, y es lo que
+    // la mariposa mira al pasar a un metro.
+    for (let i = 0; i < helechos; i++) {
+      const a = rnd() * TAU, c = Math.cos(a), s = Math.sin(a);
+      const nudo = ejeEn(alto * (.32 + rnd() * .5));
+      for (let k = 0; k < 3; k++) {
+        hojaCopa(tonos[1], nudo.x + c * nudo.r * .9, nudo.y + (rnd() - .5) * .4, nudo.z + s * nudo.r * .9,
+          c + (rnd() - .5) * .5, -.4 - rnd() * .8, s + (rnd() - .5) * .5, c, .25, s, radio * (.7 + rnd() * .5));
+      }
+    }
   }
 
   // Arbusto: cinco lóbulos de esfera con materiales mezclados, manojos de hojas que sobresalen
@@ -765,7 +1018,7 @@ export function crearKit(scene, world) {
     lote('caja', 'vidrioFarol', lx, alto - .3, lz, { ry, esc: [.33, .4, .33], sombra: false });
     lote('caja', 'farolLuz', lx, alto - .3, lz, { ry, esc: [.24, .3, .24], sombra: false });
     lote('caja', 'hierro', lx, alto - .09, lz, { ry, esc: [.36, .07, .36] });
-    world.addCircle(x, z, .3);
+    world.addCircle(x, z, .3, alto);         // el poste: la luminaria va más arriba, sin colisión
   }
 
   // Reloj de la llegada: basamento de piedra, poste de madera con capitel, caja de carpintería
@@ -854,7 +1107,7 @@ export function crearKit(scene, world) {
     scene.add(piramide);
     lote('cil', 'tejaHonda', x, 5.08, z, { esc: [.1, .16, .1] });
     lote('esfera', 'tejaHonda', x, 5.22, z, { esc: [.26, .28, .26] });
-    world.addCircle(x, z, .45);
+    world.addCircle(x, z, .45, 5.4);         // el pomo del tejadillo, lo más alto de la pieza
   }
 
   // Banca de listones con brazos de hierro. Los listones llevan su veta y el brazo tiene algo
@@ -882,7 +1135,7 @@ export function crearKit(scene, world) {
       const [px, pz] = L(0, .18 + i * .03);
       lote('caja', 'maderaClara', px, .72 + i * .2, pz, { ry, rx: -.18, esc: [largo, .16, .07] });
     }
-    world.addCircle(x, z, .85);
+    world.addCircle(x, z, .85, 1);           // el respaldo: una banca se pasa por encima
   }
 
   // Pozo de piedra: brocal de mampostería irregular, tejadillo sobre el torno y cubo colgando
@@ -913,7 +1166,7 @@ export function crearKit(scene, world) {
     lote('caja', 'tierraHonda', x, 1.02, z, { esc: [.03, .82, .03], sombra: false });
     lote('cil', 'maderaClara', x, .66, z, { esc: [.46, .42, .46] });
     lote('cil6', 'hierro', x, .88, z, { esc: [.5, .05, .5] });
-    world.addCircle(x, z, r + .4);
+    world.addCircle(x, z, r + .4, 2.5);      // el tejadillo del torno
   }
 
   // Carreta de bueyes varada: dos ruedas de seis rayos con llanta de hierro sobre el mismo
@@ -956,7 +1209,7 @@ export function crearKit(scene, world) {
       const [sx2, sz2] = L(-.7 + i * .37, (rnd() - .5) * .5);
       lote('mata', 'lona', sx2, 1.3 + rnd() * .07, sz2, { esc: [.5, .42, .46], sombra: false });
     }
-    world.addCircle(x, z, 1.4);
+    world.addCircle(x, z, 1.4, 1.6);         // la carga de sacos sobre el cajón
   }
 
   // Barril de madera: duelas verticales, tapa y tres aros de hierro. En vez de un cilindro
@@ -973,7 +1226,7 @@ export function crearKit(scene, world) {
     lote('cil', 'maderaClara', x, alto - .015, z, { esc: [r * 1.86, .03, r * 1.86] });
     for (const y of [alto * .16, alto * .5, alto * .84])
       lote('cil6', 'hierro', x, y, z, { esc: [r * 2.16, .06, r * 2.16] });
-    world.addCircle(x, z, r + .22);
+    world.addCircle(x, z, r + .22, alto);
   }
 
   // Tendedero entre dos postes: la cuerda, las telas que se mecen, las pinzas y el fleco.
@@ -1175,7 +1428,7 @@ export function crearKit(scene, world) {
     // Cada letra se dibuja barra a barra; el paso se reparte para que el texto entre en la
     // tabla por más largo que sea, y el trazo se inclina con su propio ángulo (rz).
     rotular(texto, { L, z: .11, ry, y: 2.0, anchoMax: 1.9 });
-    world.addCircle(x, z, .55);
+    world.addCircle(x, z, .55, 2.4);         // la tabla rotulada (y sus dos postes) por encima
   }
 
   // Cerca de estacas: límite de un solar sin tapar la vista. Las estacas alternan altura y se
@@ -1195,6 +1448,6 @@ export function crearKit(scene, world) {
       lote('caja', 'maderaClara', (x1 + x2) / 2, y, (z1 + z2) / 2, { ry: -ang, rz: Math.PI / 2, esc: [.07, largo, .06] });
   }
 
-  Object.assign(kit, { ventana, puerta, techo, techoHip, chimenea, casa, palmera, banano, arbusto, maceta, farol, reloj, banca, pozo, carreta, barril, tendedero, hamaca, nasas, junco, cartel, cerca });
+  Object.assign(kit, { ventana, puerta, techo, techoHip, chimenea, casa, palmera, banano, arbol, arbusto, maceta, farol, reloj, banca, pozo, carreta, barril, tendedero, hamaca, nasas, junco, cartel, cerca });
   return kit;
 }

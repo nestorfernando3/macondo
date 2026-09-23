@@ -9,18 +9,30 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
 
 ## Cómo se recorre
 - **Usted es una mariposa amarilla.** Vuela con altura automática sobre el terreno
-  (calle, muelle y mirador incluidos); no hay caídas ni atascos.
-- **La altura la elige usted:** Espacio sube y Shift baja (en táctil, los botones ▲▼). La
-  altura se conserva al soltar y siempre se mide desde el suelo, así que la mariposa sube con
-  el terreno en vez de hundirse en él, y nunca atraviesa el suelo ni el techo. Las lecturas y
-  los hallazgos piden volar cerca: suba para ver el pueblo, baje para descubrirlo.
-- **Volar es un toque:** toque o haga clic en cualquier punto y la mariposa va hasta allí.
-  En computador también WASD/flechas (hacia donde mira la cámara); E o el botón Explorar descubre algo cercano. En móvil, joystick y toque.
-- **Cámara en tercera persona:** vuela detrás de la mariposa; arrastre para orbitarla.
+  (calle, muelle, ladera y meseta del mirador incluidos); no hay caídas ni atascos.
+- **El ratón gira y WASD vuela.** Un clic sobre la escena vuela a ese punto y no se lleva el
+  cursor; el chip **Vista libre** captura el puntero: desde ahí, mover el ratón gira la cámara
+  —sin arrastrar— y WASD o las flechas vuelan hacia donde mira. Con el puntero capturado
+  aparece una mira en el centro y un clic vuela a ese punto. **Esc** suelta el puntero (y
+  detiene el vuelo) para pulsar los botones del HUD; R centra la cámara. Arrastrar sigue
+  girando sin capturar, y en móvil mandan el joystick y el arrastre; tocar el suelo elige un
+  destino.
+- **La altura la elige la mirada:** mirar hacia arriba sube y hacia abajo baja; con la cámara
+  al horizonte la altura se conserva. Siempre se mide desde el suelo, así que la mariposa sube
+  con el terreno —ladera del mirador y muelle incluidos— en vez de hundirse en él, y nunca
+  atraviesa el suelo ni el techo. Las lecturas y los hallazgos piden volar cerca: suba para ver
+  el pueblo, baje para descubrirlo.
+- **Pasar por encima:** la mariposa vuela, así que rejas, bancas, setos, piedras, macetas,
+  norays y la baranda de la meseta sólo la detienen por debajo de su remate. Los muros, las
+  casas, los troncos, el faro y el río no se pasan a ninguna altura. El mirador se alcanza
+  volando desde cualquier lado (su ladera es suelo) o subiendo por la rampa.
+- **Cámara en tercera persona:** vuela detrás de la mariposa y se arrima cuando un muro, una
+  casa o un tronco se le cruzan —no los atraviesa, y pasa por encima de lo bajo igual que
+  ella—; el giro del ratón suelta la perseguidora —el vuelo sigue su rumbo— y R la centra.
 - **Mapa y guía:** «Guiarme» vuela la ruta (plaza → casa → jardín → puerto → mirador) con
   pausa en cada llegada; el vuelo manual o «Detener» cancelan. «Ir hasta allí» desde el mapa.
 - **Lecturas:** acerque la mariposa a la mesa, el árbol, la carta, las páginas, el reloj,
-  la espiral de mariposas o el faro; ninguna pregunta bloquea el paso.
+  la espiral de mariposas, el faro o el tendal del jardín; ninguna pregunta bloquea el paso.
 - **Escritura:** al cerrar la lectura del mirador puedes escribir tres frases, copiarlas o descargarlas.
 
 ## Recorrido narrado y recuerdos
@@ -28,8 +40,10 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   del paseo (velocidad 1,7 m/s) y «Continuar» aparece al terminar el relato de cada llegada.
   Subtítulos siempre visibles; el chip «Voz» apaga todo (preferencia persistente). El audio
   nace solo de un gesto y si falta un MP3 la experiencia sigue completa.
-- **Pasajes sin quiz:** el reloj de la llegada, la espiral de mariposas y el faro del muelle
-  abren lecturas nuevas con línea «para conversar» y botón «▶ Escuchar».
+- **Pasajes sin quiz:** el reloj de la llegada, la espiral de mariposas, el faro del muelle y el
+  tendal de bramante abren lecturas nuevas con línea «para conversar» y botón «▶ Escuchar».
+  El tendal es además la única estación que trae **cita del libro**: la ascensión de Remedios,
+  la bella, transcrita del capítulo 12 y atribuida en el mismo bloque.
 - **Recuerdo:** el botón «Recuerdo» descarga una postal PNG del lugar (foto, título, línea y fecha).
 - **Sonido del pueblo:** el chip «Sonido» enciende viento, río y aves (silencio inicial; se
   recuerda por dispositivo). El río se oye más cerca de la orilla y todo el ambiente baja
@@ -47,10 +61,13 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   de viga, techo acanalado a dos aguas (o a cuatro), ventanas con marco, contraventanas y
   alféizar, puertas de dos hojas abiertas, chimenea, portal con baranda y bajantes. Hay
   palmeras de fronda pinnada —raquis con folíolos en aguja, dos anillos de hojas, cogollo verde
-  y el racimo de cocos bajo la corona—, bananos con racimo, matas, faroles, bancas, pozos con
-  tejadillo, carretas con ruedas de radios, barriles de duelas, nasas, tendederos, hamacas,
-  cercas y el cartel rotulado de la entrada. El reloj de la llegada —pieza del kit, no un
-  cuadrado con rayas— tiene esfera redonda con aro de hierro, numerales romanos en los cuartos,
+  y el racimo de cocos bajo la corona—, bananos con racimo, árboles de hoja ancha —tronco
+  ahusado que se abre en horquilla, copa de hojas en tres pisos de verde y contrafuertes al
+  pie: la pieza `kit.arbol` que visten el del tiempo, los de la calle, los de la plaza y los de
+  la otra orilla—, matas, faroles, bancas, pozos con tejadillo, carretas con ruedas de radios,
+  barriles de duelas, nasas, tendederos, hamacas, cercas y el cartel rotulado de la entrada. El
+  reloj de la llegada —pieza del kit, no un cuadrado con rayas— tiene esfera redonda con aro de
+  hierro, numerales romanos en los cuartos,
   barras radiales en las demás horas y dos agujas de verdad: la minutera da la vuelta cada 30 s
   y la horaria va doce veces más despacio. En reposo marca las cuatro.
 - **Flores de verdad:** las flores dejaron de ser icosaedros y los pétalos que caen del árbol
@@ -70,6 +87,17 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   el destino queda marcado con un anillo dorado. Y al quedarse quieto en un lugar nuevo, la
   voz lo cuenta sola: antes había que pedir «guiarme» para oír el pueblo, y quien entraba sin
   pulsar nada lo encontraba mudo.
+- **Remedios, la bella:** sube sola sobre el tendal de bramante del jardín, con las sábanas
+  aleteando a su lado, y se pierde en el aire alto. La tarde del capítulo 12 se repite en un
+  ciclo de 62 s: sube de 2,6 a 32,8 m y se apaga por los dos extremos, así que el reinicio del
+  ciclo no se ve nunca —cuando vuelve a empezar está por encima del cordel y transparente—.
+  Arranca a 2,6 m y no a ras de suelo a propósito: a la altura del tendal, su vestido y la ropa
+  tendida son el mismo color y la misma altura, y a la distancia a la que se la mira —la cámara
+  va 4,8 m detrás de la mariposa— las dos piezas se fundían en una sola mancha clara. Cuelga de
+  `kit.animar`, de modo que «Pausar movimiento» la congela donde esté y con
+  `prefers-reduced-motion` queda en pose fija a media subida. Seis mallas, 592 triángulos
+  (0,4 % del presupuesto), sin proyectar sombra y con cero llamadas de dibujo mientras está
+  apagada. Vive en `src/world/remedios.js`.
 - **Anatomía:** el vocabulario de piezas vive en `src/world/kit.js`, el floral en
   `src/world/flora.js` y cada lugar en `src/world/places/*.js`; la capa de vida en
   `src/world/ambient.js`. Detalle, presupuesto medido y trampas:
@@ -85,6 +113,8 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
   vocabulario de piezas (casa, palmera, farol, portal…). `src/world/flora.js`: el vocabulario
   floral (pétalo, corola, brizna) y sus constructores. `src/world/places/*.js`: los cinco
   lugares más las calles. `src/world/ambient.js`: la capa de vida.
+- `src/world/remedios.js`: la ascensión de Remedios, la bella, sobre el tendal del jardín
+  (figura, sábanas que aletean y ciclo de subida); su ancla es el encuentro `sabanas-bramante`.
 - `src/world/butterflyAvatar.js`: la mariposa del jugador (contornos, textura pintada y
   aleteo con desfase, según `docs/SPEC-MARIPOSA-AVATAR.md`); sus alas y su textura visten
   también a las 45 mariposas del pueblo.
@@ -103,7 +133,11 @@ Producción: `npm run build`; servir únicamente `dist/`. No abrir index.html co
 - https://www.nobelprize.org/prizes/literature/1982/press-release/
 - https://www.nobelprize.org/prizes/literature/1982/marquez/lecture/
 
-Textos pedagógicos y ejemplos originales; no se reproducen fragmentos de las novelas.
+Textos pedagógicos y ejemplos originales. La única cita literal de la novela es la ascensión de
+Remedios, la bella (el tendal del jardín): se transcribe íntegra en el campo `cita` de esa
+estación, con atribución a su capítulo, separada de la glosa en el panel —bloque propio y serif,
+bajo el rótulo «Del libro»— y **fuera de la narración hablada**, porque el audio se genera y se
+distribuye como MP3 y grabarlo sería una reproducción mucho más pesada que esta cita impresa.
 El paisaje es una interpretación artística, no una reconstrucción geográfica.
 Especificación: `docs/SPEC-RECORRIDO-3D.md`. Estado y pendientes: `internal/HANDOFF.md`.
 Avatar de mariposa (implementado): `docs/SPEC-MARIPOSA-AVATAR.md`.
@@ -111,12 +145,15 @@ Avatar de mariposa (implementado): `docs/SPEC-MARIPOSA-AVATAR.md`.
 ## Controles y primeros pasos
 - Tutorial de tres pasos dentro del paseo: volar, mirar y explorar. Se puede omitir y repetir en Ayuda; la preferencia se guarda en el dispositivo.
 - Los toques toleran pequeños movimientos del dedo. Arrastrar gira la cámara; tocar el suelo elige un destino sin abrir lecturas accidentalmente.
-- R o «Centrar cámara» recupera la orientación, M abre el mapa y Escape detiene el vuelo. Cambiar de ventana detiene el movimiento.
-- Espacio y Shift (o los botones ▲▼) vuelan la altura; el recorrido guiado la devuelve a la de
-  crucero al arrancar, porque el relato y las llegadas están escritos para verse desde ahí.
+- R o «Centrar cámara» recupera la orientación, M abre el mapa y Escape suelta el puntero y detiene el vuelo. Cambiar de ventana detiene el movimiento.
+- La captura del puntero es opt-in y efímera: entra con el chip «Vista libre», sale con Esc o
+  al abrir cualquier panel, y el HUD lo recuerda con un aviso de siete segundos bajo la mira.
+  Ni el clic ni el arrastre capturan nada.
+- El recorrido guiado devuelve la altura y la mirada a crucero al arrancar, porque el relato y
+  las llegadas están escritos para verse desde ahí.
 - Frenado más inmediato, rechazo de destinos bloqueados y cancelación del vuelo cuando una pared impide avanzar. Usa el mapa para los trayectos entre lugares.
 - El indicador muestra la siguiente parada pendiente y «Guiarme» comienza por ella.
-- Verificación: `node --test tests/*.test.js`; con Vite en 5175, `node internal/verificacion/cdp_jugabilidad.mjs` y `node internal/verificacion/cdp_altura.mjs` (subir, bajar, topes de suelo y techo, botones del HUD y choques de la interfaz en móvil).
+- Verificación: `node --test tests/*.test.js`; con Vite en 5175, `node internal/verificacion/cdp_jugabilidad.mjs`, `node internal/verificacion/cdp_camara.mjs` (la perseguidora no se mete en el pueblo) y `node internal/verificacion/cdp_altura.mjs` (mira en el centro, «Vista libre» captura el puntero, altura con la mirada y sus topes, llegada volando a la meseta, paso por encima de lo bajo y choques de la interfaz en móvil).
 
 ## Seis pequeños asombros y agua en movimiento
 Busca las semillas doradas de la entrada, la fuente, el patio, el jardín, el muelle y el mirador. Al acercarte, cada una revela una frase original que se conserva en **Hallazgos**. El álbum ofrece pistas y acceso al cuaderno; el recorrido guiado también permite recogerlas. **Recuerdo** descarga una postal del lugar actual.

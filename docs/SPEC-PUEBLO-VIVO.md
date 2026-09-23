@@ -76,6 +76,25 @@ lleva cinco pétalos y 60 triángulos; la del prado, que se ve a diez metros y d
 lleva cuatro pétalos y 32. Con la barata el prado pasó de 150 a 320 matas por el mismo
 presupuesto.
 
+**Los árboles.** `kit.arbol(x, z, opciones)` es la pieza de hoja ancha que usan el árbol del
+tiempo del jardín, los once de las calles, los dos de sombra de la plaza y los seis de la otra
+orilla del río. Antes un árbol era un poste recto —el mismo radio de arriba abajo— con cuatro
+tarugos *centrados* en el tronco, que por eso lo atravesaban y asomaban por el otro lado, y
+esferas de hasta tres metros y medio: de cerca la copa se leía como un racimo de globos y el
+árbol entero como un poste con bolas. Ahora la madera nace en su base y muere donde nace la
+siguiente —`tramo()` devuelve el nudo y el radio, así que tronco, ramas y horquillas casan
+radio con radio, sin escalón—, la copa son manojos de hojas del vocabulario floral con la cara
+hacia fuera, y el diámetro de cada bulto sale del número de manojos: la copa se cierra con una
+suma de discos calculada en la pieza, no a ojo de quien llama. Los tonos van por pisos —verde
+hondo abajo, el de siempre en medio, claro arriba—, que es como se lee un árbol de verdad.
+
+Los números que la llamada elige son los del dibujo y el presupuesto de su distancia: el del
+jardín se mira a un metro y lleva cinco ramas, contrafuertes con pie, helechos en la corteza y
+flores —de su copa caen los pétalos de la capa de vida, y ahí está por fin de dónde caen—; los
+de la calle y la plaza pierden los helechos, las flores y los pies de las raíces; los de la
+orilla lejana, que se miran a más de 35 m, sólo llevan tronco y copa. La copa no lleva
+colisión: se atraviesa volando, como las de antes.
+
 
 **Cómo se paga el detalle.** El detalle repetido entra por `lote(geo, mat, x, y, z, opciones)`
 y sale horneado en un `InstancedMesh` por par (geometría, material): marcos, contraventanas,
@@ -126,13 +145,13 @@ registradas.
 Las cifras de FPS del banco de pruebas son un **suelo**, no una medida de dispositivo: el
 renderizador es por CPU. Sirven para comparar antes/después.
 
-| Encuadre | Llamadas antes | Llamadas con flora | Llamadas con palmeras | Triángulos antes | Triángulos con flora | Triángulos con palmeras |
-|---|---|---|---|---|---|---|
-| Plaza de llegada | 223 | 218 | 223 | 74 976 | 127 766 | 134 936 |
-| Casa de la memoria | 118 | 156 | 155 | 71 148 | 124 806 | 131 172 |
-| Jardín del tiempo | 131 | 109 | 110 | 67 418 | 119 496 | 126 314 |
-| Puerto de la espera | 93 | 117 | 117 | 60 158 | 113 252 | 120 190 |
-| Mirador (peor caso) | 272 | 240 | 246 | 76 472 | 129 158 | 136 932 |
+| Encuadre | Llamadas antes | Llamadas con flora | Llamadas con palmeras | Llamadas con árboles | Triángulos antes | Triángulos con flora | Triángulos con palmeras | Triángulos con árboles |
+|---|---|---|---|---|---|---|---|---|
+| Plaza de llegada | 223 | 218 | 223 | 224 | 74 976 | 127 766 | 134 936 | 141 028 |
+| Casa de la memoria | 118 | 156 | 155 | 155 | 71 148 | 124 806 | 131 172 | 135 956 |
+| Jardín del tiempo | 131 | 109 | 110 | 133 | 67 418 | 119 496 | 126 314 | 133 970 |
+| Puerto de la espera | 93 | 117 | 117 | 120 | 60 158 | 113 252 | 120 190 | 126 630 |
+| Mirador (peor caso) | 272 | 240 | 246 | 266 | 76 472 | 129 158 | 136 932 | 143 308 |
 
 Mallas totales 328 → 264 (106 instanciadas), geometrías 71 → 78, bundle 167,58 → 185,40 kB
 gzip. La segunda vuelta sube los triángulos un 70 % —flores de verdad en el prado, en las
@@ -147,10 +166,19 @@ y las llamadas apenas se mueven —cinco más—: la fronda, las frondas secas, 
 y los cocos entran por `lote`/`mecer` como todo lo demás. El precio se pagó en triángulos y a
 conciencia: la corona es lo que se mira al volar.
 
+La cuarta vuelta son **los árboles**, y cuesta unos **+6 400 triángulos** en el peor encuadre
+(de 136 932 a 143 308, 4,5 % de margen). El árbol del tiempo pasa de unos 1 900 a unos 4 200
+—es el único que se mira a un metro y lleva ramas a la vista, helechos en la corteza y
+flores—, y los otros veinticinco del pueblo, de 500–700 a 700–1 400 cada uno. La madera entra
+por `lote` en dos vocabularios: `troncoAhusado` (ocho caras, cerrado, 32 triángulos por tramo)
+para el árbol que se mira cerca y `troncoFino` (seis caras, abierto, 12) para los que se miran
+de lejos, donde el corte abierto no se ve. Las llamadas suben hasta 23 en el encuadre del
+jardín —cada par (geometría, material) nuevo es una llamada— y siguen lejos del techo de 400.
+
 El presupuesto lo vigila `internal/verificacion/cdp_rendimiento.mjs`, que afirma menos de 400
-llamadas y menos de 150 000 triángulos por encuadre. El peor caso queda en 136 932 (9 % de
-margen). El FPS del banco por CPU bajó de 11–13/16–20/11–12 a 10/13,6/9: es un suelo, no una
-medida de dispositivo, y ya estaba por debajo del umbral de 20 FPS con el que el reloj del
+llamadas y menos de 150 000 triángulos por encuadre. El peor caso queda en 143 308. El FPS del
+banco por CPU bajó de 11–13/16–20/11–12 a 10/13,6/9 y ahora mide 8,1/10,4/6,9: es un suelo, no
+una medida de dispositivo, y ya estaba por debajo del umbral de 20 FPS con el que el reloj del
 paseo se mantiene en tiempo real.
 
 Instrumentos: `internal/verificacion/cdp_metricas.mjs` (llamadas, triángulos y capturas de

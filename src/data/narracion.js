@@ -1,7 +1,11 @@
 // Narración del recorrido guiado en español colombiano (voz de Deepgram Aura 2).
-// Todo el texto es original; no se reproducen fragmentos de las obras.
+// Todo el texto de aquí es original; no se reproducen fragmentos de las obras.
 // Los clips «lectura-<id>» se derivan de las estaciones de content.js:
 // el guion de generación los sintetiza con el mismo texto que se ve en pantalla.
+// Por eso la ascensión de Remedios, la bella —la única cita literal de la novela, en el campo
+// `cita` de esa estación— se queda fuera de la narración a propósito: el clip se graba y se
+// distribuye como MP3, y una grabación del fragmento sería una reproducción mucho más pesada
+// que la cita impresa que el panel muestra. Lo que se escucha es la glosa, que es nuestra.
 import { stations } from './content.js';
 
 const textos = {

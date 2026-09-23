@@ -11,6 +11,9 @@ import { buildJardin } from './places/jardin.js';
 import { buildPuerto } from './places/puerto.js';
 import { buildMirador } from './places/mirador.js';
 import { crearVida } from './ambient.js';
+import { crearRemedios } from './remedios.js';
+import { crearHielo } from './places/hielo.js';
+import { crearTallerPescaditos } from './places/pescaditos.js';
 
 // Composición del pueblo a escala humana (metros). Paleta Caribe del spec: estuco
 // marfil/coral, carpintería turquesa, tejas terracota, vegetación profunda, flores rosa y
@@ -60,6 +63,26 @@ export function createVillage(experience) {
   buildSecondPackage(ctx);
   kit.hornear();
   const vida = crearVida(ctx);
+  // Remedios sube sola sobre el tendal del jardín. Va después de `hornear()` porque no entra por
+  // el acumulador de instancias: son seis mallas con materiales propios —tienen que apagarse
+  // una a una al final del ciclo— y no tiene sentido abrir un lote para una figura que existe
+  // una sola vez. Su animación cuelga de `kit.animar`, igual que el viento y el agua.
+  crearRemedios(ctx);
+
+  // Las dos piezas de la capa literaria: la carpa del hielo (cap. 1 y 11) junto a la plaza y el
+  // taller del platero (caps. 6, 9 y 13) en el patio. Tampoco entran por `hornear()`: son pocas
+  // mallas con materiales propios y cada una trae sus colisiones en coordenadas de mundo, que es
+  // aquí donde se registran. La prueba de transitabilidad del pueblo las vigila igual que al
+  // resto: ninguna de las dos toca los caminos del grafo.
+  const hielo = crearHielo(ctx);
+  ctx.scene.add(hielo.grupo);                     // su grupo ya viene añadido: add es idempotente
+  for (const [x1, z1, x2, z2, alto] of hielo.colisiones) kit.colisionCaja(x1, z1, x2, z2, alto);
+  const taller = crearTallerPescaditos(ctx);
+  ctx.scene.add(taller.grupo);
+  for (const c of taller.colisiones) {
+    if (c.caja) kit.colisionCaja(...c.caja, c.alto);
+    else if (c.circulo) kit.colisionCirculo(...c.circulo, c.alto);
+  }
 
   // El pueblo se revisa a sí mismo al construirse: la lista de problemas viaja en el
   // resultado (vacía = cumple lo prometido) y la cruzan la prueba de Node y los guiones CDP.
@@ -67,7 +90,12 @@ export function createVillage(experience) {
 
   return {
     world, interactables, invariantes, camera: experience.camera,
-    update(t) { kit.actualizar(t); vida.update(t); },
+    update(t) {
+      kit.actualizar(t);
+      vida.update(t);
+      hielo.actualizar?.(t);        // goteo, brillo y charco; con movimiento reducido no existe
+      taller.actualizar?.(t);       // llamas, brasa y brillo del metal
+    },
   };
 }
 
@@ -119,30 +147,17 @@ function vegetacion(ctx) {
   }
 
   // Árboles interiores con colisión (los mismos de antes: el circuito ya los esquiva).
-  // Antes eran un poste recto con tres esferas encima, y a la altura de vuelo de la
-  // mariposa el tronco parecía flotar. La copa de cinco lóbulos en dos verdes, las raíces
-  // al pie y el tronco en dos tramos desfasados dan silueta de árbol de verdad sin mover
-  // un milímetro el `colisionCirculo` pactado.
+  // El dibujo vive en `kit.arbol` —tronco ahusado, ramas a la vista y copa de hojas—, la
+  // misma pieza del árbol del tiempo: aquí sólo se dice dónde y de qué tamaño. Antes eran un
+  // poste recto con tres esferas encima, y a la altura de vuelo de la mariposa el tronco
+  // parecía flotar. La colisión es la de siempre: no se movió un milímetro.
   for (const [tx, tz] of [[12, 5], [22, 4], [-14, 14], [-16, -6], [31, 8], [-22, 18], [9, 27], [-9, -9], [31, -18], [-13, -14], [6.5, -14]]) {
-    const vuelco = (rnd() - .5) * .09;               // el tronco no sale perfecto a plomo
-    kit.lote('cil6', 'tronco', tx, 1.25, tz, { rz: vuelco, esc: [.48, 2.5, .48] });
-    kit.lote('cil6', 'tronco', tx + vuelco * 2.5, 2.85, tz, { rz: vuelco * 2, esc: [.34, 1.5, .34] });
-    // Raíces: bultos de tronco medio hundidos en el suelo, repartidos al azar. Son lo que
-    // ata el árbol al piso cuando la mariposa lo bordea.
-    for (let i = 0; i < 3; i++) {
-      const a = (i / 3) * Math.PI * 2 + rnd() * .8;
-      kit.lote('bruto', 'tronco', tx + Math.cos(a) * .36, .09, tz + Math.sin(a) * .36,
-        { ry: -a, esc: [.92, .44, .52] });
-    }
-    // Copa: cinco lóbulos a distintas alturas, corrimientos y tamaños; los altos, más claros.
-    const lobulos = [[0, 4.2, 0, 3.3], [-.85, 3.7, .5, 2.5], [.8, 3.8, -.55, 2.4], [.25, 4.9, .35, 2.2], [-.35, 3.4, -.8, 1.9]];
-    for (let i = 0; i < lobulos.length; i++) {
-      const [dx, dy, dz, d] = lobulos[i];
-      kit.lote('esfera', i === 1 || i === 3 ? 'hojaClara' : 'hoja',
-        tx + dx + (rnd() - .5) * .35, dy + (rnd() - .5) * .3, tz + dz + (rnd() - .5) * .35,
-        { ry: rnd() * 6.28, esc: [d, d * .82, d] });
-    }
-    kit.colisionCirculo(tx, tz, .5);
+    kit.arbol(tx, tz, {
+      alto: 4, radio: .36, copa: 2, yCopa: 5.4, altoCopa: 1.4,
+      ramas: 3, bajas: 0, raices: 4, pies: false, manojos: 10, hojas: 1, colgantes: 1,
+      semilla: 300 + Math.round(tx * 7 + tz * 3), madera: 'troncoFino',
+    });
+    kit.colisionCirculo(tx, tz, .5, 4);        // el tronco; la copa se atraviesa volando
   }
 
   // ---------- Vegetación perimetral (límite del mundo) ----------

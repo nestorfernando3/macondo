@@ -1,10 +1,16 @@
 // Normaliza teclado, ratón y multitáctil. Emite estado; no mueve la cámara.
 // Limpia inputs en blur, pointercancel y contextmenu.
+//
+// El clic sobre la escena vuela al punto y el arrastre gira la cámara; ninguno de los dos se
+// lleva el puntero, así que el HUD siempre se puede pulsar. La captura del puntero es una
+// elección aparte —el chip «Vista libre»—: con ella puesta no hay cursor, girar es mover el
+// ratón sin pulsar nada, un clic vuela al punto de la mira (el centro de la pantalla) y Esc
+// la suelta para volver a los botones. No hay teclas de subir ni de bajar: la altura la elige
+// la mirada (ver `PlayerController.empujeVertical`).
 
 const KEY_MAP = {
   KeyW:'fwd', ArrowUp:'fwd', KeyS:'back', ArrowDown:'back',
   KeyA:'left', ArrowLeft:'left', KeyD:'right', ArrowRight:'right',
-  Space:'up', ShiftLeft:'down', ShiftRight:'down',  // el vuelo también sube y baja
 };
 export class InputController {
   constructor(dom) {
@@ -13,8 +19,9 @@ export class InputController {
     this.interact = false;           // pulsación consumible
     this.enabled = true;
 
+    this.dom = dom;
     this._keys = new Set();
-    this._lift = 0;                  // botones Subir/Bajar del HUD: 0, 1 o -1
+    this._locked = false;            // puntero capturado: girar es mover el ratón
     this._joy = { active:false, id:null, ox:0, oy:0, x:0, y:0 };
     this._lookTouch = { id:null, lx:0, ly:0 };
     this._drag = null;
@@ -31,10 +38,8 @@ export class InputController {
       if (e.code === 'KeyE' && !e.repeat) { this._pressInteract(e); return; }
       const m = KEY_MAP[e.code];
       if (!m) return;
-      // El espacio sobre un botón con foco lo activa el navegador: no se lo robamos.
-      if (e.code === 'Space' && e.target?.closest?.('button,a')) return;
       this._keys.add(e.code);
-      if (e.code.startsWith('Arrow') || e.code === 'Space') e.preventDefault();
+      if (e.code.startsWith('Arrow')) e.preventDefault();
     };
     this._ku = e => { const m = KEY_MAP[e.code]; if (m) this._keys.delete(e.code); };
     addEventListener('keydown', this._kd);
@@ -44,15 +49,33 @@ export class InputController {
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.clear(); });
     dom.addEventListener('contextmenu', e => { e.preventDefault(); this.clear(); });
     dom.style.touchAction = 'none';
+    // La captura del puntero puede fallar (Chrome la veta justo después de un Esc): se
+    // pide sin romper nada y el vuelo por punto sigue funcionando con el cursor a la vista.
+    this._plc = () => { this._locked = document.pointerLockElement === dom; };
+    document.addEventListener('pointerlockchange', this._plc);
 
-    // Ratón: arrastrar para mirar (sin pointer lock), clic corto = interactuar.
+    // Ratón: el clic —corto, sin arrastre— vuela al punto y captura el puntero; el arrastre
+    // sigue girando la cámara sin capturarla, así que el HUD no se queda sin cursor por
+    // arrastrar. Con el puntero capturado no hay cursor: el movimiento gira la cámara y el
+    // clic vuela al punto de la mira.
     this._pd = e => {
-      if (!this.enabled || e.button !== 0 || this._drag) return;
+      if (!this.enabled || e.button !== 0) return;
       if (e.target.closest('button,a,input,textarea,select,dialog,#hud')) return;
+      if (this._locked) {                     // sin cursor, la mira es el centro de la pantalla
+        this.tap = { x: (globalThis.innerWidth ?? 0) / 2, y: (globalThis.innerHeight ?? 0) / 2 };
+        return;
+      }
+      if (this._drag) return;
       this._drag = { id:e.pointerId, x:e.clientX, y:e.clientY };
       this._downXY = { id:e.pointerId, x:e.clientX, y:e.clientY, t:performance.now() };
     };
     this._pm = e => {
+      if (!this.enabled) return;
+      if (this._locked) {                     // girar sin arrastrar ni pulsar
+        this.look.dx += e.movementX || 0;
+        this.look.dy += e.movementY || 0;
+        return;
+      }
       if (!this._drag || e.pointerId !== this._drag.id) return;
       if (this._downXY && Math.hypot(e.clientX-this._downXY.x, e.clientY-this._downXY.y) < 8) return;
       this.look.dx += e.clientX - this._drag.x;
@@ -63,10 +86,14 @@ export class InputController {
     this._pu = e => {
       if (this._drag && e.pointerId === this._drag.id) this._drag = null;
       if (this._downXY && e.pointerId === this._downXY.id) {
-        // Toque corto sobre la escena: vuelo por punto (main decide si es interacción).
+        // Toque corto sobre la escena: sólo vuela. Antes pedía también la captura del puntero,
+        // y como volar es el gesto principal del paseo, el primer toque de cualquiera se
+        // llevaba el cursor y desde ahí ningún chip del HUD recibía un clic. La captura ahora
+        // la pide el chip «Vista libre»: es una elección, no un efecto de volar.
         if (performance.now() - this._downXY.t < 600 &&
-            !e.target.closest?.('button,a,input,textarea,select,dialog,#hud'))
+            !e.target.closest?.('button,a,input,textarea,select,dialog,#hud')) {
           this.tap = { x: e.clientX, y: e.clientY };
+        }
         this._downXY = null;
       }
     };
@@ -83,9 +110,18 @@ export class InputController {
     this.interact = true;
   }
 
-  // Botones Subir/Bajar del HUD: se mantienen mientras el puntero siga pulsado.
-  liftPress(dir) { this._lift = dir < 0 ? -1 : 1; }
-  liftRelease() { this._lift = 0; }
+  // ¿El puntero está capturado? El HUD lo usa para enseñar la mira.
+  get locked() { return this._locked; }
+  // Pide la captura del puntero. La dispara el chip «Vista libre», así que va dentro de un
+  // gesto de verdad. Chrome puede vetarla (justo después de un Esc) y devuelve una promesa
+  // rechazada: se traga y el paseo sigue con el cursor a la vista.
+  request() {
+    const pedido = this.dom.requestPointerLock?.();
+    pedido?.catch?.(() => {});
+  }
+  // Suelta el puntero. Lo llama main al abrir un panel: con el puntero capturado no hay
+  // cursor y los botones del diálogo quedarían fuera de alcance.
+  release() { if (this._locked) document.exitPointerLock?.(); }
 
   // Joystick táctil: el DOM crea el elemento; aquí solo matemática.
   joyStart(id, ox, oy) { this._joy = { active:true, id, ox, oy, x:0, y:0 }; }
@@ -103,19 +139,17 @@ export class InputController {
   }
   touchLookEnd(id) { if (this._lookTouch.id === id) this._lookTouch.id = null; }
 
-  clear() { this._drag = this._downXY = null; this._lookTouch.id = null; this._keys.clear(); this._lift = 0; this.look.dx = this.look.dy = 0; this._joy.active = false; this._joy.x = this._joy.y = 0; this.interact = false; this.tap = null; }
+  clear() { this._drag = this._downXY = null; this._lookTouch.id = null; this._keys.clear(); this.look.dx = this.look.dy = 0; this._joy.active = false; this._joy.x = this._joy.y = 0; this.interact = false; this.tap = null; }
 
   // Consume el estado acumulado desde el último frame.
   sample() {
     const k = new Set([...this._keys].map(code => KEY_MAP[code]));
     let jx = 0, jy = 0;
     if (this.joy) { jx = this.joy.x; jy = this.joy.y; }
-    const up = (k.has('up') ? 1 : 0) - (k.has('down') ? 1 : 0);
     const out = {
       move: {
         fwd:   (k.has('fwd')   ? 1 : 0) - (k.has('back') ? 1 : 0),
         right: (k.has('right') ? 1 : 0) - (k.has('left') ? 1 : 0),
-        up: Math.max(-1, Math.min(1, up + this._lift)),  // teclado y botones a la vez
       },
       joy: { x: jx, y: jy },
       look: { x: this.look.dx, y: this.look.dy },

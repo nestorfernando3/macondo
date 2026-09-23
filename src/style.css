@@ -15,7 +15,18 @@
 #hud{position:fixed;inset:0;pointer-events:none;z-index:5;font-size:13px}
 #hud>*{pointer-events:auto}
 #place-name{position:absolute;top:74px;left:50%;transform:translateX(-50%);background:#14303cc0;backdrop-filter:blur(10px);color:#fff6df;padding:8px 20px;border-radius:20px;font-family:Georgia;font-size:15px;letter-spacing:1px;border:1px solid #e6d7ba30}
-#hud-actions{position:absolute;top:74px;right:14px;display:flex;flex-direction:column;gap:8px}
+/* La franja de arriba: en escritorio #hud-top no genera caja, así que cada pieza conserva su
+   posición absoluta de siempre; sólo el teléfono lo convierte en columna (ver el final). */
+#hud-top{display:contents}
+/* Zonas separadas por 16 px y unidas por dentro con 8: el hueco dice qué va junto, sin líneas.
+   Lo que se toca mientras se explora queda a la vista; sonido, cámara, recuerdo, ayuda y
+   salida viven en el cajón «Más opciones». De once chips permanentes a seis. */
+#hud-actions{position:absolute;top:74px;right:14px;display:flex;flex-direction:column;gap:16px}
+#hud-actions .zona{display:flex;flex-direction:column;gap:8px}
+/* En escritorio el cajón abre AL LADO del riel, no debajo. Apilado sumaba 320 px más y a
+   alturas de portátil (≈810 px útiles) metía la columna dentro del minimapa. De lado, el riel
+   conserva su alto cerrado y el cajón se lee como lo que es: un panel que sale del riel. */
+#hud-actions #hud-extra{position:absolute;top:0;right:calc(100% + 12px);width:max-content}
 #hud-actions button,#interact-btn,#tour-stop,#tour-continue,#tour-skip-audio{padding:10px 16px;border:1px solid #e6d7ba40;border-radius:8px;background:#14303cd0;color:#fff6df;backdrop-filter:blur(10px);font-size:12px}
 #hud-actions button:hover,#interact-btn:hover{background:#284653}
 #interact-tip{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center;background:#14303cd9;color:#fff6df;padding:10px 16px;border-radius:10px;backdrop-filter:blur(10px)}
@@ -30,17 +41,16 @@
 #tour-continue{background:#ffcd70!important;color:#263845!important;font-weight:600}
 #joystick{display:none;position:absolute;left:22px;bottom:26px;width:104px;height:104px;border-radius:50%;background:#14303c70;border:1.5px solid #e6d7ba50;touch-action:none;backdrop-filter:blur(6px)}
 body.touch #joystick{display:block}
-/* Altura del vuelo. En computador va sobre el aviso de vuelo, en el rincón izquierdo, lejos
-   de la columna de acciones, que es lo único que llega tan abajo por la derecha. En táctil
-   sube encima del minimapa: el pulgar derecho la alcanza sin soltar la mirada, y el rincón
-   inferior izquierdo —joystick y banner del recorrido— queda entero para volar. */
-#altitude{position:absolute;left:20px;bottom:60px;display:flex;flex-direction:row;gap:8px}
-body.touch #altitude{left:auto;right:14px;bottom:176px;flex-direction:column;gap:10px}
-#altitude button{width:46px;height:46px;padding:0;font-size:14px;line-height:1;border:1px solid #e6d7ba40;border-radius:50%;background:#14303cd0;color:#fff6df;backdrop-filter:blur(10px);touch-action:none}
-#altitude button:hover{background:#284653}
-#altitude button:active{background:#ffcd70;border-color:#ffcd70;color:#263845}
+/* Mira del vuelo: sólo con el puntero capturado, porque es el punto al que vuela el clic.
+   Es un aro pequeño y translúcido —no una cruz de francotirador—: marca el centro sin
+   tapar el pueblo. */
+#crosshair{display:none;position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;border:1.5px solid #fff6df99;border-radius:50%;box-shadow:0 0 6px #0b1a22aa;pointer-events:none}
+body.pointer-locked #crosshair{display:block}
+/* Aviso del puntero capturado: debajo de la mira y efímero —lo enciende main al capturar y
+   lo apaga solo—, porque lo que dice (cómo recuperar el cursor) sólo hace falta una vez. */
+#lock-hint{position:absolute;left:50%;top:calc(50% + 22px);transform:translateX(-50%);max-width:88vw;margin:0;padding:7px 14px;border-radius:999px;background:#14303cd0;color:#fff6df;font-size:12px;backdrop-filter:blur(10px);pointer-events:none}
 #joy-knob{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#ffcd70cc}
-@media(max-width:700px){#place-name{top:auto;bottom:150px;font-size:12px}#hud-actions{flex-direction:row;flex-wrap:wrap;top:64px;left:12px;right:12px}#hud-actions button{padding:9px 12px;font-size:11px}#interact-tip{bottom:190px}#tour-banner{flex-wrap:wrap;bottom:12px;max-width:92vw}header button{font-size:9px;padding:8px 10px}dialog#reading,dialog#writing,dialog#story{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0 auto;width:100%;max-width:100%;border-radius:16px 16px 0 0;max-height:74svh}}
+@media(max-width:700px){#place-name{font-size:12px}#hud-actions button{padding:9px 12px;font-size:11px}#interact-tip{bottom:190px}#tour-banner{flex-wrap:wrap;bottom:12px;max-width:92vw}header button{font-size:9px;padding:8px 10px}dialog#reading,dialog#writing,dialog#story{position:fixed;left:0;right:0;bottom:0;top:auto;margin:0 auto;width:100%;max-width:100%;border-radius:16px 16px 0 0;max-height:74svh}}
 
 /* ===== Escritura ===== */
 #reading,#writing,#map,#help,#story{color:#293b43}
@@ -109,6 +119,15 @@ body.touch #altitude{left:auto;right:14px;bottom:176px;flex-direction:column;gap
 #reading-listen{margin-top:12px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6}
 #reading-conversa{margin:14px 0 0;background:#e9e2cf;border-left:3px solid #b98c42;padding:12px 14px;font-size:14px;font-style:italic}
 #reading-conversa::before{content:'Para conversar';display:block;font-style:normal;font-weight:600;font-size:10px;letter-spacing:2px;color:#b98c42;margin-bottom:6px}
+/* La cita textual, única transcripción literal de la novela en toda la experiencia. Se separa
+   de la glosa por fondo, borde y tipografía —papel blanco y serif contra el verde y la sans de
+   nuestro propio comentario—, para que nadie confunda la voz de García Márquez con la nuestra.
+   El borde es madera y no el oro de «Para conversar» y de la obra: son tres voces distintas y
+   cada una tiene su color. */
+#reading-cita{margin:18px 0 0;padding:16px;background:#fffdf6;border-left:3px solid #8a5a3b}
+#reading-cita::before{content:'Del libro';display:block;font-weight:600;font-size:10px;letter-spacing:2px;color:#8a5a3b;margin-bottom:8px}
+#reading-cita p{margin:0;font-family:Georgia,serif;font-size:15px;line-height:1.72}
+#reading-cita cite{display:block;margin-top:12px;font-style:normal;font-size:11px;letter-spacing:.5px;color:#8a7a5e}
 @media(max-width:700px){#caption-bar{bottom:170px;flex-direction:column}#caption{font-size:12px}}
 
 /* Orientación y práctica dentro del paisaje. */
@@ -123,13 +142,12 @@ body.touch #altitude{left:auto;right:14px;bottom:176px;flex-direction:column;gap
    que un pulgar tiene que acertar con una sola mano. */
 #hud-actions button{min-height:44px}
 @media(max-width:700px){
-  #hud-actions{gap:5px}#hud-actions button{min-height:44px;padding:8px 10px}
-  #journey-status{top:158px;left:12px;right:12px;max-width:none;font-size:11px;margin:0}
-  #onboarding{top:208px;left:12px;width:min(300px,calc(100vw - 24px));padding:14px}
+  #journey-status{font-size:11px;margin:0}
+  #onboarding{width:min(300px,calc(100vw - 24px));padding:14px}
   #onboarding strong{font-size:20px}#onboarding p{font-size:12px}
   #tour-banner{left:auto;right:12px;transform:none;width:calc(100% - 150px);padding:10px;gap:6px;font-size:11px}
 }
-@media(max-height:580px){#onboarding{top:150px;max-height:calc(100svh - 170px);overflow:auto}#journey-status{top:105px}}
+@media(max-height:580px){#onboarding{max-height:calc(100svh - 170px);overflow:auto}}
 
 #flight-status{position:absolute;bottom:12px;left:20px;max-width:300px;background:#14303ce8;border-radius:8px;padding:8px 12px;font-size:11px;pointer-events:none}#flight-status:empty{display:none}
 body.touch #flight-status{bottom:135px;left:12px;max-width:210px}
@@ -141,7 +159,7 @@ body.touch #flight-status{bottom:135px;left:12px;max-width:210px}
    de conclusión, y el panel respira más; la lista es el archivo y se desplaza sin drama. */
 #discoveries{max-height:94svh}
 #discovery-complete{background:#e9e2cf;border-left:3px solid #416b55;padding:14px;margin:0 0 14px;font-size:14px}
-@media(max-width:700px){#hud-actions{max-height:152px;overflow-y:auto}#journey-status{top:208px}#onboarding{top:260px}#discovery-toast{top:auto;bottom:240px;width:85vw}#hud-actions button{padding:8px 10px}#caption{max-width:90vw}}
+@media(max-width:700px){#discovery-toast{top:auto;bottom:240px;width:85vw}#caption{max-width:90vw}}
 @media(max-height:580px) and (min-width:701px){#hud-actions{max-height:calc(100svh - 85px);overflow-y:auto}}
 
 #story-interaction { display: grid; gap: .75rem; }
@@ -168,4 +186,118 @@ body.touch #flight-status{bottom:135px;left:12px;max-width:210px}
   .lede{font-size:14px;line-height:1.6;margin:0}
   .primary{margin-top:12px;padding:14px 20px}
   .hint{margin-top:12px}
+}
+
+/* En el teléfono la franja de arriba deja de ser cuatro cajas absolutas con `top` calculados a
+   mano contra la altura de los chips. Ahora es una columna en flujo: acciones, nombre del
+   lugar, estado y tutorial se apilan con huecos reales, así que crecer nunca vuelve a pisar a
+   nadie. Las acciones pasan de un flujo suelto —que dejaba «Portada» sola en una tercera fila
+   de 62 px— a una rejilla de tres columnas: seis chips, dos filas exactas y bordes alineados.
+   El cajón ocupa la fila entera y reparte sus chips a lo ancho para que «Centrar cámara» no se
+   apriete a 320 px. */
+@media(max-width:700px){
+  #hud-top{position:absolute;top:64px;left:12px;right:12px;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+  #hud-top>*{position:static;inset:auto;transform:none;max-width:none;pointer-events:auto}
+  #place-name,#journey-status{pointer-events:none}
+  #place-name{align-self:flex-start}
+  /* El bloque no se queda los clics de los huecos: entre chip y chip se sigue volando. */
+  #hud-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;max-height:none;overflow:visible;pointer-events:none}
+  #hud-actions button{pointer-events:auto}
+  #hud-actions .zona{display:contents}
+  #hud-actions #hud-extra{position:static;inset:auto;width:auto;grid-column:1/-1;display:flex;flex-direction:row;flex-wrap:wrap;gap:5px;margin-top:3px}
+  /* El rótulo del lugar entra en columna, así que su reaparición no puede seguir desplazándolo
+     media pantalla a la izquierda: se queda en un desplome corto. */
+  @keyframes reveal{from{opacity:0;letter-spacing:6px;transform:translateY(-6px)}to{opacity:1;letter-spacing:1px;transform:translateY(0)}}
+}
+
+/* ---------- Capa literaria: sello de origen, ficha, índice, árbol, palabras y pergamino ----------
+   La ficha es una glosa nuestra y va marcada con su sello; la cita de la estación de Remedios
+   conserva su tratamiento aparte (borde marrón, cuerpo serif). Todo se lee en la columna del
+   panel, sin arrastrar y con el foco visible. */
+.sello-origen{display:inline-block;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:4px 9px;border-radius:20px;border:1px solid}
+.sello-origen--novela{color:#6b4f2a;background:#f4e8cd;border-color:#d9c08a}
+.sello-origen--instalacion{color:#3f6650;background:#e7efe4;border-color:#a9bfa2}
+#reading-novela{margin-top:18px;padding-top:16px;border-top:1px dashed #cdc3ab;display:grid;gap:10px}
+.ficha-novela{background:#fffdf6;border:1px solid #ded4be;border-radius:10px;padding:16px}
+.ficha-novela-cabecera{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.ficha-novela-capitulo{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8a7a5e}
+.ficha-novela-titulo{font-family:Georgia,serif;font-weight:500;font-size:19px;margin:0 0 8px}
+.ficha-novela-texto{margin:0;font-size:14px;line-height:1.72}
+.ficha-novela-datos{margin:12px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6;color:#4c5a55}
+.ficha-novela-dato{margin-bottom:5px}
+.ficha-novela-fuente{margin:12px 0 0;font-size:11px;color:#8a7a5e}
+dialog .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px}
+dialog .row button{padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6;color:#293b43}
+dialog .row a{align-self:center}
+/* La ayuda creció con la capa literaria al pie: se le da el alto que le falta para que
+   «Reiniciar recorrido» —y las cuatro cosas nuevas— se vean sin desplazar a ciegas. */
+#help{max-height:92svh}
+#fallback .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+#open-arbol,#open-palabras{margin:14px 0 4px;padding:10px 14px;border:1px solid #c7c4b7;border-radius:6px;background:#f0e9d6;color:#293b43}
+.indice-novela-lista{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.indice-novela-entrada{padding:12px 14px;border:1px solid #ded4be;border-radius:10px;background:#fffdf6}
+.indice-novela-titulo{display:flex;gap:10px;align-items:baseline;font-size:15px;margin:0 0 4px}
+.indice-novela-numero{font-family:Georgia,serif;font-size:20px;color:#b98c42;min-width:24px}
+.indice-novela-nombre{font-weight:600}
+.indice-novela-hechos{margin:0;font-size:13px;line-height:1.6}
+.indice-novela-estaciones{margin:8px 0 0;display:flex;gap:6px;flex-wrap:wrap}
+.indice-novela-estacion{font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:#e9e2cf;color:#5b4a2c}
+.indice-novela-nota{margin:16px 0 0;font-size:12px;color:#6d6151}
+.arbol-titulo{font-family:Georgia,serif;font-weight:500;font-size:19px;margin:0 0 8px}
+.arbol-leyenda{font-size:12px;color:#6d6151;margin:0 0 14px}
+.arbol-generacion{margin-bottom:14px}
+.arbol-generacion-lista{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.arbol-persona{padding:10px 12px;border-left:3px solid #b98c42;background:#fffdf6;border-radius:0 8px 8px 0}
+.arbol-persona-cabecera{display:flex;gap:8px;align-items:baseline}
+.arbol-nombre{font-weight:600}
+.arbol-nombre--resaltado{background:#ffe9a8;box-shadow:0 0 0 2px #e0b955 inset;border-radius:4px}
+.arbol-marca{color:#b98c42}
+.arbol-persona p{margin:4px 0 0;font-size:12.5px;line-height:1.55;color:#4c5a55}
+.arbol-final{font-style:italic}
+.arbol-cierre{margin:14px 0 0;font-size:13px;line-height:1.65}
+.arbol-notas{margin:10px 0 0;padding-left:18px;font-size:12px;color:#6d6151}
+.arbol-nombre:focus-visible{outline:3px solid #ffcc65;outline-offset:3px;border-radius:4px}
+.cuaderno-palabras-intro{font-size:13px;color:#4c5a55;margin:0 0 12px}
+.cuaderno-palabras-buscar{margin-bottom:14px}
+.cuaderno-palabras-buscar-texto{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#8a7a5e;margin-bottom:4px}
+.cuaderno-palabras-campo{width:100%;min-height:44px;font:inherit;padding:10px;border:1px solid #c7c4b7;border-radius:6px;background:#fffdf6;color:#293b43}
+.cuaderno-palabras-categoria{margin-bottom:14px}
+.cuaderno-palabras-categoria-titulo{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#9d641d;margin:0 0 6px}
+.cuaderno-palabras-lista{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.palabra{display:grid;gap:2px;padding:10px 12px;border:1px solid #ded4be;border-radius:8px;background:#fffdf6}
+.palabra-nombre{font-family:Georgia,serif;font-size:16px}
+.palabra-significado{font-size:13px;line-height:1.55}
+.palabra-capitulo{font-size:11px;letter-spacing:1px;color:#8a7a5e}
+.palabra-nota{font-size:12px;color:#4c5a55}
+.cuaderno-palabras-estado{margin:8px 0 0;font-size:12px;color:#6d6151}
+#writing-pergamino:empty{display:none}
+.pergamino{margin-top:16px;padding:16px;border:1px solid #ded4be;border-radius:10px;background:#fffdf6}
+.pergamino-titulo{font-family:Georgia,serif;font-weight:500;font-size:18px;margin:0 0 8px}
+.pergamino-texto{margin:0;font-family:Georgia,serif;font-size:14.5px;line-height:1.75;font-style:italic}
+.pergamino-huellas{margin:12px 0 0;padding-left:18px;font-size:12.5px;line-height:1.6}
+.pergamino-huella-titulo{margin-right:6px}
+.pergamino-huella-texto{color:#4c5a55}
+@media(max-width:700px){
+  .ficha-novela{padding:14px}
+  .pergamino-texto{font-size:14px}
+  dialog .row{align-items:stretch}
+  dialog .row button{flex:1 1 auto}
+}
+
+/* En un teléfono bajo no cabe un cajón en el flujo: abierto empujaba el nombre del lugar y la
+   franja de estado hasta la escalera de ascenso y el aviso de vuelo (a 320×568 se cruzaban).
+   Y no cabe porque el sitio no existe: entre la pila y la franja de abajo quedan 226 px y el
+   cajón pide 150. Así que allí el cajón deja de empujar y pasa a ser lo que es en una pantalla
+   pequeña —una capa por encima de la escena, con su sombra y su propio desplazamiento—, que
+   se cierra con el mismo chip con el que se abrió. En pantallas altas sigue en el flujo, que
+   es donde se lee mejor. */
+@media(max-width:700px) and (max-height:640px){
+  #hud-actions #hud-extra{
+    position:fixed;left:12px;right:12px;top:169px;width:auto;margin-top:0;z-index:1;
+    max-height:calc(100svh - 300px);overflow-y:auto;pointer-events:auto;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:5px;
+    padding:10px;border:1px solid #e6d7ba30;border-radius:14px;
+    background:#132c38e6;backdrop-filter:blur(12px);
+    box-shadow:0 14px 34px #0007;
+  }
 }

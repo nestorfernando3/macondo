@@ -13,5 +13,16 @@ export const ENCOUNTERS = [
  { id:'pagina', locationId:'mirador', contentId:'voz', label:'Las historias', x:17, z:22, y:3, eyeY:1.6, radius:2.4, superficie:3.16 },
  { id:'objeto-reloj', locationId:'plaza', contentId:'llegada', label:'El reloj de la llegada', x:3.2, z:5.2, y:0, eyeY:2.2, radius:2.0 },
  { id:'objeto-espiral', locationId:'jardin', contentId:'mariposas', label:'La espiral de mariposas', x:22.4, z:-7.6, y:0, eyeY:1.8, radius:2.1, superficie:.63 },
- { id:'objeto-faro', locationId:'puerto', contentId:'tren', label:'El faro del muelle', x:-22.8, z:10.6, y:0, eyeY:2.6, radius:2.0 }
+ { id:'objeto-faro', locationId:'puerto', contentId:'tren', label:'El faro del muelle', x:-22.8, z:10.6, y:0, eyeY:2.6, radius:2.0 },
+ // El tendal donde Fernanda doblaba sus sábanas de bramante. Es el punto exacto donde arranca
+ // la ascensión: la pieza vive en places/jardin.js y la figura que sube, en world/remedios.js.
+ { id:'sabanas-bramante', locationId:'jardin', contentId:'remedios', label:'Las sábanas de bramante', x:25, z:-6, y:0, eyeY:1.7, radius:2.3 },
+ // Las dos piezas de la capa literaria: la carpa del hielo, al sureste de la plaza, y el taller
+ // del platero, en el rincón oeste del patio. Las mallas viven en places/hielo.js y
+ // places/pescaditos.js; aquí solo se dice dónde se pueden leer.
+ // El ancla del hielo va delante de la carpa, sobre el frente que mira a la plaza: el banquete y
+ // el cofre quedan a la vista, dentro del radio, y el punto no cae dentro de sus colisiones
+ // (la prueba «cada encuentro conserva un punto de aproximación libre» lo vigila).
+ { id:'objeto-hielo', locationId:'plaza', contentId:'hielo', label:'El cofre del hielo', x:8.4, z:-3.4, y:0, eyeY:1.4, radius:2.4 },
+ { id:'objeto-pescaditos', locationId:'patio', contentId:'pescaditos', label:'La bandeja del platero', x:-2.45, z:-15.5, y:0, eyeY:1.0, radius:2.0 }
 ];

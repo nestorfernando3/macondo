@@ -1,4 +1,259 @@
-# Entrega vigente · el vuelo sube y baja (22 septiembre 2026)
+# Entrega vigente · La cámara no atraviesa el pueblo y el patio tiene techo (23 septiembre 2026)
+
+Continúa la entrega del vuelo (el ratón gira, WASD vuela, ningún lugar queda cercado). El
+pendiente que quedaba en el HANDOFF era este: la cámara en tercera persona no colisionaba con
+nada y con más sitios a los que volar había más dónde meterse.
+
+## Qué se entregó
+
+- **La perseguidora se apoya en las mismas colisiones que el vuelo.** `_brazoLibre()` muestrea
+  el brazo de la cámara (6 pasos, radio 0,26) y recorta la distancia al último punto libre; el
+  arrimón entra rápido y sale despacio (`k = 18`/`4` en `_apply`), y `CAM_MIN = 0,4` porque
+  contra un muro la cámara tiene que caber entre la mariposa y el muro. Pasa por encima de lo
+  bajo igual que ella (usa los remates de la entrega anterior) y no toca el HUD ni la
+  jugabilidad: es sólo la posición de la cámara.
+- **Medido, no supuesto:** un barrido de 26 puntos (los seis lugares, los cinco nodos del
+  recorrido, calles y esquinas) × 8 rumbos × 3 inclinaciones = **624 encuadres** pasa de
+  **77 dentro de un obstáculo (12,3 %) a 1 (0,2 %)**. El que queda está declarado en el guion:
+  de espaldas al farol de w1, el tubo (radio 0,3) no da para meter la cámara entre él y la
+  mariposa; forzar más el arrimón metería la cámara dentro de ella.
+- **El tejado del patio es un sólido.** La captura del patio salía en el color de la teja: la
+  cámara salía por encima del tejado porque no había colisión y la mariposa también lo
+  atravesaba al subir. `WalkableWorld` estrena **`base`** (bloquea de la base al remate, para lo
+  que está en el aire) y la casa registra su tejado (`base = CH + .5` = 3,7, remate en la
+  cumbrera). Los invariantes a ras de suelo no cambian (`y <= base` no bloquea).
+- **`cdp_camara.mjs`, nuevo** (en `todos.mjs`): el barrido de arriba sobre la cámara que el
+  juego coloca de verdad (`place()` + `orbitPitch` + `_apply(0)`), y 160 cuadros en vivo en el
+  patio, la puerta y la meseta leyendo `camera.position` cuadro a cuadro (0 dentro, 80
+  arrimones). Captura `camara_patio.png`.
+
+## Verificación
+
+- `node --test tests/*.test.js`: **66/66** (dos pruebas nuevas de cámara: se arrima ante un muro
+  y pasa por encima de lo bajo).
+- `cdp_camara` OK; `cdp_altura` reescrito al diseño vigente (el clic vuela sin capturar, el
+  chip «Vista libre» captura y marca `aria-pressed`, la mira y el aviso aparecen, giro por
+  `pointermove`, altura con la mirada, llegada al mirador, invariantes) OK; `cdp_fisica`,
+  `cdp_lectura`, `cdp_paneles`, `cdp_jugabilidad` y el resto de la batería, verdes.
+
+## Quirks que el siguiente no debe repetir
+
+- **Dos sesiones tocaron los mismos archivos a la vez** (el cajón «Más opciones» del HUD y el
+  disparador de la captura del puntero). Antes de escribir hay que releer el archivo: lo que
+  aterrizó manda, y lo que se reconcilia son los guiones, los textos y las pruebas —no al
+  revés—. El chip «Vista libre» vive en `#hud-extra`, así que el arnés abre el cajón solo
+  cuando el objetivo de un clic está dentro.
+- El barrido de cámara **hay que hacerlo con la cámara del juego**, no recalculando el brazo a
+  mano: la primera versión medía la geometría cruda y daba 77/624 con el arreglo ya puesto.
+- Los `pointermove` inyectados por CDP no traen `movementX`: el giro se prueba con
+  `new PointerEvent('pointermove', { movementX, movementY })`.
+
+# Entrega vigente · Remedios, la bella sube al cielo (23 septiembre 2026)
+
+Pedido: «quiero que agregues a remedios la bella volando en el cielo, y una actividad con el
+pasaje exacto del libro».
+
+## Qué se entregó
+
+- **La ascensión (`src/world/remedios.js`, nuevo).** Remedios sube sola sobre el tendal de
+  bramante del jardín, con las dos sábanas aleteando a su lado y el brazo en saludo, y se pierde
+  en el aire alto. Ciclo de 62 s: sube de 2,6 a 32,8 m con exponente —se demora abajo, que es
+  donde hay algo que ver, y se acelera justo cuando ya se está desvaneciendo— y se apaga por los
+  dos extremos, así que el salto de `u = 1` a `u = 0` ocurre con la figura ya invisible. Las
+  sábanas ondulan de verdad (30 vértices cada una sobre su malla de reposo): un plano rígido que
+  sólo gira se lee como una tabla, y es la única silueta que esta escena no puede fingir. Seis
+  mallas y 592 triángulos (0,41 % del presupuesto), sin proyectar sombra, y con cero llamadas de
+  dibujo mientras está apagada (`raiz.visible = false`).
+- **Arrancar a 2,6 m costó una pasada de ojos.** La primera versión salía a ras de suelo (1,1 m)
+  y a la altura del tendal el vestido y la ropa tendida son el mismo color y la misma altura: a
+  la distancia a la que se la mira —la cámara va 4,8 m detrás de la mariposa, así que se la ve
+  desde unos 8 m— las dos piezas se fundían en una sola mancha clara. Lo mismo con las sábanas:
+  de 1,5 m de ancho son paneles de dos metros y medio que se comen la figura. Ahora miden 0,8 m,
+  giran poco (con medio radián se ponían de canto y se leían como paneles, no como tela) y ella
+  pasa de 1,74 a 1,9 m. La comprobación no es mirar: `cdp_remedios` proyecta su posición con la
+  cámara y exige que caiga dentro del encuadre.
+- **El tendal, que es el ancla.** `sabanas-bramante` (25, −6) en `src/data/encounters.js`, la
+  pieza en `places/jardin.js` —el claro del norte, el único tramo del jardín sin macetas,
+  bancales ni el árbol del tiempo— y los dos postes con colisión a 2,4 m, por encima del vuelo
+  de crucero. La figura lee la misma ancla: mover el tendal mueve la ascensión.
+- **La actividad.** Estación `remedios` en `content.js`: lectura sin quiz con línea «para
+  conversar», como los otros tres pasajes. Es la única estación con **cita literal del libro**, y
+  por eso estrena campos propios: `cita` (el pasaje del capítulo 12), `citaFuente` (la
+  atribución) y `source:null`.
+- **La cita en el panel.** `#reading-cita` (`index.html`) es un `<blockquote>` con su `<cite>`,
+  va ANTES de la glosa y se separa de ella por fondo de papel, tipografía serif, borde de madera
+  y el rótulo «Del libro». Tres voces —libro, comentario y «Para conversar»— con tres colores
+  distintos: nadie confunde lo que escribió García Márquez con lo que decimos nosotros.
+
+## La política de citas cambió, y a propósito
+
+El proyecto decía en tres sitios «no se reproducen fragmentos de las novelas». Ahora `content.js`,
+`narracion.js` y el README dicen algo más preciso: los textos pedagógicos siguen siendo originales
+y **la única cita literal es esta**, transcrita entera, atribuida a su capítulo y **fuera de la
+narración hablada**. El motivo del último punto no es formal: los clips de audio se generan y se
+distribuyen como MP3, así que grabar el fragmento sería una reproducción mucho más pesada que la
+cita impresa. Lo que suena es la glosa, que es nuestra. El enlace `#source` de esa estación se
+retira en vez de apuntar al Nobel, porque la fuente de una cita es el libro.
+
+## Verificación de esta entrega
+
+- **La cita es idéntica al libro**: 1545 caracteres contra el EPUB de la raíz (`012.xhtml`,
+  capítulo 12), comparados carácter a carácter. No es una paráfrasis ni un resumen.
+- `node --test tests/*.test.js`: **63/63** (incluye las pruebas de la capa de novela que otra
+  sesión agregó en paralelo sobre este mismo árbol). `npm run build`: OK, JS 191,94 kB gzip.
+- Ciclo de la ascensión medido en Node fotograma a fotograma: 28/32 visibles, 2,77 → 32,83 m, y
+  el cierre del ciclo invisible en los dos extremos.
+- Presupuesto de la escena: 143 388 triángulos y 293 mallas en total (incluye el vocabulario de
+  árboles en curso, que no es de esta entrega); Remedios pone 6 mallas y 592 triángulos = 0,41 %.
+- `node internal/verificacion/cdp_remedios.mjs`: la cita viaja entera (1545 caracteres), con su
+  atribución, sin quiz, con la línea «para conversar» alcanzable tras recorrer el panel, con el
+  enlace de fuente retirado, y con el bloque de cita en otro fondo y otra tipografía que la glosa;
+  la figura está en el encuadre y sube sola; en móvil (390 px) la cita no desborda.
+
+## Un fallo ajeno que esta entrega encontró y arregló
+
+`tests/expansion.test.js` estaba en rojo **antes** de tocar nada —comprobado desactivando
+`crearRemedios` y repitiendo— y lo causaba el vocabulario de árboles en curso de `kit.js`.
+`ejeEn()` devolvía `{ x, z, r }` y sus cuatro llamadores leen `nodo.y`: al ser `undefined`,
+`Math.hypot(fuera, undefined)` daba NaN y `hacia()` construía un cuaternión NaN que se horneaba en
+26 de 28 troncos y 18 de 118 manojos. Nadie lo veía porque una matriz NaN no lanza: la instancia
+simplemente no se dibuja. Se añadió la `y` interpolada al nudo. Las dos pruebas que lo vigilan
+—`ninguna familia instanciada deja matrices en NaN` y su variante con `prefers-reduced-motion`—
+pasan desde entonces.
+
+## Quirks que el siguiente no debe repetir
+
+- **Con `prefers-reduced-motion` hay que darle una pose fija, y esto vale para cualquier figura
+  futura que cuelgue de `kit.animar`.** `village.update` sólo corre con `ambientPaused` en falso,
+  así que sin ese caso la figura se queda en su fotograma cero —que aquí es opacidad cero, o sea
+  invisible— y no se nota hasta mirar el jardín en un equipo con la preferencia puesta.
+- **El rumbo del modelo es −z** (la convención del avatar): `atan2(−dx, −dz)`. Con el signo
+  cambiado mira de espaldas y desde el tendal no se le ve la cara. Lo pagó esta entrega en el
+  primer intento.
+- **Si añades una estación a `content.js`, `narracion.js` se entera solo** y la prueba exige que
+  `lectura-<id>` empiece por el título y que el total no pase de 1200 caracteres. Por eso la cita
+  no puede vivir en `body`: son 1545 caracteres ella sola.
+- **La figura se llama `remedios` en la escena (`raiz.name`), y la verificación la busca por ahí.**
+  Antes la buscaban por `emissiveIntensity === .24` y bastó subir el brillo del vestido para que
+  los guiones dejaran de verla y culparan al producto. Cualquier figura futura que se verifique
+  quiere nombre propio, no un número mágico.
+- **Un guion CDP colgado deja su Chrome vivo, y el siguiente se cuelga también.** No es teoría:
+  cuatro Chromes zombis de esta entrega bastaron para que las corridas empezaran a fallar con
+  «unsettled top-level await» y evaluaciones que devolvían `undefined`. Antes de culpar al código,
+  `ps -eo pid,command | grep '[G]oogle Chrome.app/Contents/MacOS' | grep -o -- '--user-data-dir=[^ ]*'`
+  y matar los perfiles `perfil-arnes-*` sobrantes. Ojo: hay Chromes del usuario en `/tmp/macondo-*`
+  que no son de los guiones.
+
+---
+
+# Registro anterior · el ratón manda y ningún lugar queda cercado (22 septiembre 2026)
+
+Dos pedidos en un mensaje: «no me gustan los controles para subir y bajar; quiero algo más
+tradicional, movimiento conjunto entre WASD y el puntero del mouse para tener más fluidez» y
+«parece que no puedo acceder a esta zona por un bloque invisible» (captura del mirador).
+
+## El bloqueo invisible: lo que era
+
+Reproducido sin navegador: `player.place(2.6, 9)` → `flyTo(17, 22)` se detenía en **(7.84,
+21.86)**, a 9,16 m del destino, contra la caja `(8.1, 13.6)–(8.7, 32.2)`. La meseta tenía
+**dos anillos de cajas invisibles** (los «anillos de colisión del borde», conservados de la
+versión peatonal) que cercaban el cerro a cualquier altura, y el vuelo sólo podía entrar por
+el pasillo de 2 m de la rampa. Además las colisiones eran **2D**: bloqueaban igual a 2,1 m que
+a 9 m, aunque delante hubiera una baranda de un metro o una banca.
+
+## Qué se entregó
+
+- **`src/navigation/WalkableWorld.js`:** los obstáculos llevan **altura** (`alto`, Y absoluta
+  del remate; `Infinity` por omisión = muro). `blocks(x, z, r, y = 0)` compara contra ella —
+  sin `y` la consulta es a ras de suelo, que es como la siguen leyendo los invariantes y el
+  recorrido. Y `addFalda(x, z, rInt, rExt, h)`: la ladera del cerro es **suelo**, no un
+  escalón (antes el cilindro del mirador sólo existía para el arte: la mariposa lo atravesaba).
+- **Alturas pieza a pieza** (`kit.js` y `places/*.js`): bancas 1 m, setos 1,45, fuente 1,8,
+  toldo del puesto 2,45, carreta 1,6, tejadillo del pozo 2,5, cabrestante 0,9, norays 0,8,
+  tendedero 2,55, sábanas 3,6, reloj 5,4, farol = su poste, faro 6,3, casas y tejados hasta la
+  cumbrera, troncos hasta su altura. El agua, los muros y lo que no se pasa quedan en
+  `Infinity`. **El mirador** estrena colisiones que siguen al arte: los 21 postes de la baranda
+  (remate a `MT + 0,98`, con el hueco de la rampa), las 24 piedras de la falda (a 1,6 m, se
+  pasan por encima) y el barandal de la rampa **tramo a tramo, subiendo con ella** (un prisma
+  único de 14 a 17,7 dejaba un muro de 4 m en el arranque). Los dos anillos rectangulares y sus
+  esquinas se retiraron.
+- **`src/world/invariantes.js`:** invariante nuevo **`vuelo`** — un relleno por inundación
+  desde el arranque a 7,5 m (sobre la cumbrera de las casas) exige que los seis lugares se
+  alcancen volando. Es la red que faltaba: este fallo lo habría cazado.
+- **Controles (`InputController`, `PlayerController`, `main.js`):** fuera `Space`/`Shift` y los
+  botones ▲▼ (con su `liftPress`, su CSS y su bloque de ayuda). El **clic corto** sobre la
+  escena vuela al punto y **no se lleva el cursor**; la captura del puntero la pide el chip
+  **«Vista libre»** (otra sesión movió el disparador del clic al chip y esta entrega se
+  reconcilió con ese diseño: con la captura en el clic, el primer toque de cualquiera dejaba el
+  HUD sin cursor). Desde ahí girar es mover el ratón
+  (`movementX/Y`, `SENS_GIRO = 0,0026` rad/px) y un clic vuela al punto de la **mira** (el
+  centro de la pantalla, que `main` convierte en un `tap` normal). Esc suelta el puntero y
+  detiene el vuelo; `input.release()` lo suelta al abrir cualquier panel; el **arrastre** sigue
+  girando sin capturar nada.
+- **La altura la manda la mirada:** `empujeVertical(orbitPitch)` (constantes `PITCH_REPOSO`
+  .34, `PITCH_MIN` −.35, `PITCH_MAX` 1.25, zona muerta de 6 centésimas) devuelve −1…1 y
+  `update` lo integra a `RISE` m/s. El horizonte sostiene la altura; `recenter()` y
+  `startTour` devuelven la mirada al horizonte (si no, el recorrido arrancaría subiendo).
+- **El vuelo horizontal sigue cancelando el destino por toque; la mirada no**, y la altura
+  responde también camino de un destino. La cámara perseguidora se suelta en cuanto el ratón
+  gira (`followCam = false`): antes se peleaban y el giro se deshacía solo.
+- **HUD/a11y:** `#crosshair` (aro de 16 px con `pointer-events:none`) y `#lock-hint` («El ratón
+  gira la cámara · Esc suelta el puntero», siete segundos) — sin cursor, el HUD es
+  inalcanzable, así que hay que decirlo. Ayuda, tutorial, pista de portada y README reescritos.
+- **Pruebas:** `tests/controls.test.js` reescrito (captura, mira, mirada como mando, topes,
+  falda, colisiones con altura, destino por encima de una banca, `recenter`). `node --test
+  tests/*.test.js`: **56/56**. `npm run build`: OK, 47 módulos, JS 188,71 kB gzip.
+
+## Verificación de esta entrega
+
+- `cdp_altura.mjs` reescrito (adiós a Espacio/Shift y a los botones): puntero capturado con
+  **clic real** (el navegador sólo lo concede con gesto de verdad), mira en el centro y aviso,
+  giro por `pointermove`, altura con la mirada (sube 3,27 → 7,88, suelo en 0,9, techo en 9, el
+  horizonte sostiene), **llegada volando al mirador a 0,25 m del destino y a 5,1 m sobre la
+  meseta** (antes: 9,16 m y bloqueada), baranda que se cruza a crucero pero no a ras, muro que
+  sigue bloqueando, falda registrada y en pendiente, invariantes limpios y móvil sin botones de
+  altura. Capturas `vuelo_mirador.png` y `vuelo_movil.png`.
+- Batería de navegador contra dev 5175, uno a uno: **`cdp_fisica`, `cdp_cancelar`,
+  `cdp_paquete1`, `cdp_patio`, `cdp_ambiente`, `cdp_mariposa`, `cdp_metricas`, `cdp_modelos`,
+  `cdp_circuito` (4/4, 194 s), `cdp_lectura`, `cdp_narracion`, `cdp_paneles` y
+  `cdp_jugabilidad` en verde**. La primera pasada destapó que cuatro guiones pulsaban chips del
+  cajón nuevo y fallaban con «el clic no alcanzó …»: se arregló en el arnés, no guion por guion
+  (ver quirks).
+- `cdp_rendimiento` sigue **por debajo de su umbral de 5 FPS** (3,5 el peor encuadre) con la
+  máquina a *load average* 48 durante la corrida, pero **las llamadas y los triángulos del peor
+  encuadre son los mismos de la entrega anterior** (246 y 136 932): es el banco (SwiftShader),
+  no la escena. Comparar siempre llamadas y triángulos.
+- El texto de la Ayuda se acortó dos veces por una razón medida, no estética: `cdp_paneles`
+  exige que «Reiniciar recorrido» se vea sin desplazar dentro del diálogo (764 px de caja en
+  esta pantalla) y el contenido nuevo lo empujaba fuera. Si se añade una viñeta, medir con
+  `cdp_paneles`.
+
+## Quirks que el siguiente no debe repetir
+
+- **Los `pointermove` inyectados por CDP no traen `movementX/Y`**: para probar el giro hay que
+  despachar el `PointerEvent` a mano (misma trampa que los botones sostenidos del HUD viejo).
+  La captura, en cambio, **sí exige clic real**: un `PointerEvent` sintético la recibe
+  rechazada y el guion cree que el producto falló.
+- **Capturar el puntero en el `pointerdown` fue un error**: el arrastre del tutorial capturaba
+  y `cdp_jugabilidad` se quedó sin HUD (todos los clics caían en el lienzo). La captura va en
+  el `pointerup` del clic corto, y el arrastre no captura.
+- **Con el puntero capturado no hay cursor**: el HUD entero depende de Esc (o de que `main`
+  suelte al abrir un panel). El aviso bajo la mira existe por eso; no lo quites sin dar otra
+  salida.
+- **La altura se lee un frame tarde tras cambiar la inclinación** (en headless, ~0,3 m), así
+  que los guiones comparan convergencia entre dos lecturas separadas, no valores exactos.
+- El HUD se reacomodó en paralelo a esta entrega (cajón **«Más opciones»**, `#hud-top`): Ayuda,
+  Voz, Sonido, Recuerdo y Portada ya no están a la vista, y **medían 0 × 0** para los guiones,
+  que fallaban con «el clic no alcanzó …» (le pasaba a `cdp_lectura`, `cdp_narracion` y
+  `cdp_jugabilidad`). El arnés lo resuelve solo: `clic()` abre el cajón cuando el objetivo vive
+  dentro y hay un `abrirCajon()` idempotente para lo que se mide con `puedeClic`.
+- La mirada sigue siendo el mando de altura durante el recorrido guiado (el tour mueve a la
+  mariposa, no la mirada): si el usuario inclina la cámara mientras dura, al terminar el vuelo
+  sube o baja. `resetAltitude()` + `recenter()` en `startTour` cubren el arranque, no el final.
+
+---
+
+# Registro anterior · el vuelo sube y baja (22 septiembre 2026)
 
 Pedido: «quiero poder subir o bajar, no solamente moverme hacia los lados y adelante». El
 vuelo era plano: `PlayerController._apply` reescribía `p.y` cada frame hacia `groundAt + HOVER`

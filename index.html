@@ -21,7 +21,7 @@
       <p class="lede">Entra y vuela por un Macondo imaginado:<br>una mariposa amarilla, cinco lugares del realismo mágico<br>seis hallazgos para descubrir<br>y el universo de Gabriel García Márquez.</p>
       <button class="primary" id="enter">Comenzar recorrido <span>↗</span></button>
       <button class="secondary" id="skip-flight" hidden>Omitir descenso</button>
-      <p class="hint">Clic para volar hasta un punto · WASD también · Espacio sube, Shift baja · arrastra para girar la cámara</p>
+      <p class="hint">Clic para volar hasta un punto y capturar el ratón · WASD vuela · mire arriba o abajo para subir y bajar · Esc suelta el puntero</p>
     </section>
     <aside class="coordinate">CARIBE IMAGINADO<br><span>Entre la memoria y el asombro</span></aside>
     <p class="footer">GABRIEL GARCÍA MÁRQUEZ <span>1927 — 2014 · NOBEL 1982</span><span id="progress">0 / 4 lugares explorados</span></p>
@@ -29,26 +29,40 @@
   <!-- HUD del paseo. Con `main` oculto durante el recorrido, este bloque era lo único que
        quedaba en pie y no era ningún hito: no había forma de saltar a los controles. -->
   <div id="hud" hidden role="region" aria-label="Paseo por Macondo">
-    <div id="place-name"></div>
-    <p id="journey-status" role="status"></p>
+    <!-- La franja de arriba es un solo bloque en flujo. Antes eran cuatro cajas absolutas con
+         `top` calculados a mano contra la altura de las acciones: al crecer los chips, la
+         píldora del lugar y el aviso de vuelo se pisaban entre sí y con la franja de estado.
+         En escritorio #hud-top es `display:contents`, así que nada se mueve de sitio. -->
+    <div id="hud-top">
+      <div id="hud-actions">
+        <div class="zona" role="group" aria-label="Recorrido">
+          <button id="open-map" aria-haspopup="dialog">Mapa</button>
+          <button id="toggle-tour" aria-pressed="false">Guiarme</button>
+          <button id="to-plaza" title="Volver a la plaza">Plaza</button>
+        </div>
+        <div class="zona" role="group" aria-label="Tu paseo">
+          <button id="open-discoveries" aria-haspopup="dialog">Hallazgos 0/6</button>
+          <button id="open-cuaderno" aria-haspopup="dialog">Cuaderno</button>
+        </div>
+        <button id="hud-mas" aria-expanded="false" aria-controls="hud-extra">Más opciones</button>
+        <div class="zona" id="hud-extra" role="group" aria-label="Más opciones" hidden>
+          <button id="audio-voice" aria-pressed="true" title="Activar o silenciar la voz de la guía">Voz</button>
+          <button id="audio-ambient" aria-pressed="false" title="Activar o silenciar el sonido del pueblo: viento, río y aves">Sonido</button>
+          <button id="free-look" aria-pressed="false" title="Girar la cámara moviendo el ratón · Esc suelta el puntero">Vista libre</button>
+          <button id="recenter" title="Centrar cámara (R)">Centrar cámara</button>
+          <button id="take-postcard" title="Descargar una postal de este lugar">Recuerdo</button>
+          <button id="help-btn" aria-haspopup="dialog">Ayuda</button>
+          <button id="exit-walk">Portada</button>
+        </div>
+      </div>
+      <div id="place-name"></div>
+      <p id="journey-status" role="status"></p>
+      <section id="onboarding" hidden aria-label="Aprende a jugar" aria-live="polite">
+        <small></small><strong></strong><p></p><button>Omitir tutorial</button>
+      </section>
+    </div>
     <p id="flight-status" role="status"></p>
     <p id="discovery-toast" role="status"></p>
-    <section id="onboarding" hidden aria-label="Aprende a jugar" aria-live="polite">
-      <small></small><strong></strong><p></p><button>Omitir tutorial</button>
-    </section>
-    <div id="hud-actions">
-      <button id="open-map" aria-haspopup="dialog">Mapa</button>
-      <button id="open-discoveries" aria-haspopup="dialog">Hallazgos 0/6</button>
-      <button id="open-cuaderno" aria-haspopup="dialog">Cuaderno</button>
-      <button id="toggle-tour" aria-pressed="false">Guiarme</button>
-      <button id="audio-voice" aria-pressed="true" title="Activar o silenciar la voz de la guía">Voz</button>
-      <button id="audio-ambient" aria-pressed="false" title="Activar o silenciar el sonido del pueblo: viento, río y aves">Sonido</button>
-      <button id="to-plaza" title="Volver a la plaza">Plaza</button>
-      <button id="take-postcard" title="Descargar una postal de este lugar">Recuerdo</button>
-      <button id="recenter" title="Centrar cámara (R)">Centrar cámara</button>
-      <button id="help-btn" aria-haspopup="dialog">Ayuda</button>
-      <button id="exit-walk">Portada</button>
-    </div>
     <div id="interact-tip" hidden>
       <span id="interact-label"></span>
       <button id="interact-btn">Explorar <kbd>E</kbd></button>
@@ -58,10 +72,10 @@
       <button id="tour-stop">Detener recorrido</button>
       <button id="tour-continue" hidden>Continuar</button>
     </div>
-    <div id="altitude" role="group" aria-label="Subir o bajar el vuelo">
-      <button id="fly-up" aria-label="Subir" title="Subir (Espacio)">▲</button>
-      <button id="fly-down" aria-label="Bajar" title="Bajar (Shift)">▼</button>
-    </div>
+    <!-- Mira: el punto al que vuela el clic mientras el puntero está capturado, con el aviso
+         que dice cómo soltarlo (sin cursor, los botones del HUD quedan fuera de alcance). -->
+    <div id="crosshair" aria-hidden="true"></div>
+    <p id="lock-hint" hidden role="status">El ratón gira la cámara · Esc suelta el puntero y detiene el vuelo</p>
     <div id="minimap" aria-hidden="true"><svg viewBox="0 0 80 80"></svg></div>
     <div id="joystick" aria-hidden="true"><div id="joy-knob"></div></div>
   </div>
@@ -78,8 +92,18 @@
     <button class="close" aria-label="Cerrar">×</button>
     <p class="eyebrow" id="reading-tag"></p>
     <h2 id="reading-title"></h2>
+    <!-- Cita textual del libro: sólo la estación «remedios» la trae. Va antes de la glosa y
+         lleva pegada su atribución, para que lo que dijo García Márquez no se confunda con lo
+         que decimos nosotros. -->
+    <blockquote id="reading-cita" hidden>
+      <p id="reading-cita-texto"></p>
+      <cite id="reading-cita-fuente"></cite>
+    </blockquote>
     <p id="reading-body"></p>
     <div class="work" id="reading-work"></div>
+    <!-- Capa literaria: el sello dice de dónde viene cada cosa y la ficha cuenta lo que la
+         novela hace con el tema de esta estación, en palabras propias y con su capítulo. -->
+    <section id="reading-novela" hidden aria-label="En la novela"></section>
     <p id="reading-conversa" hidden></p>
     <fieldset id="reading-quiz">
       <legend id="reading-question"></legend>
@@ -87,7 +111,10 @@
     </fieldset>
     <p id="feedback" role="status"></p>
     <button id="reading-listen" hidden>▶ Escuchar</button>
-    <a id="source" target="_blank" rel="noopener">Explorar la fuente ↗</a>
+    <p class="row">
+      <a id="source" target="_blank" rel="noopener">Explorar la fuente ↗</a>
+      <button id="open-indice" type="button">Lo que cuenta la novela</button>
+    </p>
   </dialog>
   <!-- Cuaderno del mirador (escritura final) -->
   <dialog id="writing" aria-labelledby="writing-title">
@@ -106,6 +133,10 @@
       <p class="eyebrow">Impresiones del paseo</p>
       <ul id="writing-trace-list"></ul>
     </div>
+    <!-- El cuaderno se lee, al final, como el pergamino que ya estaba escrito: recoge lo que el
+         visitante dejó sin citarlo, y ofrece el glosario del pueblo. -->
+    <div id="writing-pergamino"></div>
+    <button id="open-palabras" type="button">Palabras del pueblo</button>
   </dialog>
   <!-- Escena narrativa (historias del pueblo) -->
   <dialog id="story" aria-labelledby="story-title">
@@ -133,6 +164,9 @@
   <dialog id="map" aria-labelledby="map-title">
     <button class="close" aria-label="Cerrar">×</button>
     <h2 id="map-title">Mapa de Macondo</h2>
+    <!-- Arriba y no al pie: el panel del mapa ya roza el alto de la ventana con sus seis
+         destinos, y al pie el botón quedaba fuera del área visible (ningún clic lo alcanzaba). -->
+    <button id="open-arbol" type="button">Árbol de la familia Buendía</button>
     <div id="map-canvas" role="img" aria-label="Esquema del pueblo con tu posición"></div>
     <ul id="map-destinations"></ul>
     <p id="map-hint">Elige un lugar: «Ir hasta allí» te guía volando.</p>
@@ -151,23 +185,52 @@
     <button class="close" aria-label="Cerrar">×</button>
     <h2 id="help-title">Cómo recorrer</h2>
     <ul>
-      <li><strong>Vuelo:</strong> usted es una mariposa amarilla. Toque o haga clic en cualquier punto y vuela hasta allí; nada la hace caer ni la lastima.</li>
-      <li><strong>Altura:</strong> Espacio sube y Shift baja (o los botones ▲▼). La altura que elija se conserva, y el pueblo queda debajo: baje de nuevo para leer y descubrir lo que hay en el suelo.</li>
-      <li><strong>Computador:</strong> WASD o flechas para volar hacia donde mira la cámara; E o el botón Explorar para descubrir algo cercano. R centra la cámara, M abre el mapa y Escape detiene el vuelo.</li>
-      <li><strong>Móvil:</strong> joystick abajo a la izquierda para volar, los botones ▲▼ para subir y bajar, toque para ir a un punto, botón «Explorar» cuando aparezca.</li>
-      <li><strong>Cámara:</strong> arrastre para girarla alrededor de la mariposa.</li>
-      <li><strong>Mapa:</strong> el minimapa de abajo a la derecha marca los caminos y el destino en marcha. El botón «Mapa» abre los destinos y «Guiarme» vuela por usted; puede detenerlo cuando quiera.</li>
-      <li><strong>Voz:</strong> la guía marca el paso; apague el chip «Voz» para silencio. Subtítulos siempre visibles. Quieto en un lugar nuevo, el pueblo se lo cuenta solo.</li>
+      <li><strong>Vuelo:</strong> usted es una mariposa amarilla. Haga clic en cualquier punto y vuela hasta allí; nada la hace caer. La altura la manda la mirada: arriba sube, abajo baja y el horizonte la conserva.</li>
+      <li><strong>Computador:</strong> WASD o las flechas vuelan hacia donde mira la cámara y el clic vuela al punto; «Vista libre» captura el ratón para girar moviéndolo y Esc lo suelta. R centra y M abre el mapa.</li>
+      <li><strong>Móvil:</strong> joystick para volar, arrastre para girar y elegir la altura, toque para ir a un punto y «Explorar» cuando aparezca.</li>
+      <li><strong>Pasar por encima:</strong> rejas, bancas, setos y piedras sólo detienen por debajo de su remate; muros, casas, troncos, faro y río no se pasan.</li>
+      <li><strong>Mapa:</strong> el minimapa marca caminos y destino; «Guiarme» vuela por usted y «Detener» lo cancela.</li>
+      <li><strong>Voz:</strong> la guía marca el paso; «Voz» la silencia. Subtítulos siempre visibles y, quieto en un lugar nuevo, el pueblo se lo cuenta solo.</li>
       <li>Ninguna pregunta bloquea el paso. Visite los lugares a su ritmo.</li>
     </ul>
     <p><label for="quality-mode">Calidad visual</label> <select id="quality-mode"><option value="detail">Detallada</option><option value="light">Ligera · menos sombras</option></select></p>
     <button id="restart-tutorial">Repetir tutorial</button>
     <button id="no3d">Explorar sin 3D</button>
     <button id="reset-progress">Reiniciar recorrido (borra visitas y escritura)</button>
+    <!-- La capa literaria va al pie para no empujar lo esencial bajo el pliegue: el índice de
+         los veinte capítulos y el material imprimible, que se sirve tal cual desde
+         public/imprimibles (son HTML autónomos, sin build). -->
+    <p class="row">
+      <button id="toggle-lluvia" type="button" aria-pressed="false">Lluvia del libro</button>
+      <button id="open-indice-ayuda" type="button">Lo que cuenta la novela</button>
+      <a href="./imprimibles/guia-docente.html" target="_blank" rel="noopener">Guía del docente ↗</a>
+      <a href="./imprimibles/ficha-estudiante.html" target="_blank" rel="noopener">Ficha del estudiante ↗</a>
+    </p>
+  </dialog>
+  <!-- Capa literaria: dos paneles que se abren desde la lectura y desde el mapa. -->
+  <dialog id="indice" aria-labelledby="indice-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <h2 id="indice-title">Lo que cuenta la novela</h2>
+    <div id="indice-cuerpo"></div>
+  </dialog>
+  <dialog id="arbol" aria-labelledby="arbol-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <h2 id="arbol-title">El árbol de los Buendía</h2>
+    <div id="arbol-cuerpo"></div>
+  </dialog>
+  <dialog id="palabras" aria-labelledby="palabras-title">
+    <button class="close" aria-label="Cerrar">×</button>
+    <h2 id="palabras-title">Palabras del pueblo</h2>
+    <div id="palabras-cuerpo"></div>
   </dialog>
   <div id="fallback" hidden>
     <h2>La experiencia 3D no pudo iniciarse</h2>
     <p>El recorrido completo está disponible como lista de lugares:</p>
+    <div class="row">
+      <button id="fallback-indice" type="button">Lo que cuenta la novela</button>
+      <button id="fallback-arbol" type="button">Árbol de los Buendía</button>
+      <button id="fallback-palabras" type="button">Palabras del pueblo</button>
+    </div>
     <p class="eyebrow">Historias del pueblo</p>
     <nav id="fallback-historias" aria-label="Historias del pueblo"></nav>
     <p class="eyebrow">Lecturas</p>

@@ -39,7 +39,7 @@ export function buildPlaza(ctx) {
     lote('cil', 'hojaClara', Math.cos(a) * d, .64, Math.sin(a) * d, { esc: [.36, .012, .3], sombra: false });
   }
   createFountain(kit);
-  kit.colisionCirculo(0, 0, .95);
+  kit.colisionCirculo(0, 0, .95, 1.8);                 // la taza alta: la fuente se pasa por encima
 
   // ---------- Reloj de la llegada (ancla del encuentro objeto-reloj) ----------
   // La pieza vive en el kit: aquí sólo se dice dónde está y hacia dónde mira la carátula, que
@@ -106,33 +106,24 @@ export function buildPlaza(ctx) {
     lote('caja', 'maderaClara', gx, 1.87, gz, { ry: PRY, esc: [.03, .34, .03], sombra: false });
     lote('cil', 'hierro', gx, 1.66, gz, { esc: [.32, .05, .32], sombra: false });
   }
-  kit.colisionCirculo(PX, PZ, .95);
+  kit.colisionCirculo(PX, PZ, .95, 2.45);              // el toldo del puesto
 
   // ---------- Árboles de sombra ----------
-  // La copa era un tronco con tres esferas. Ahora son lóbulos irregulares de tres tonos —el
-  // de arriba recibe la luz, el de abajo se hunde—, con las raíces a la vista y la luz
-  // moteada del follaje posada al pie. Sin raíces ni moteado, un árbol a la intemperie se
-  // lee pegado a la tierra, y sin lóbulos de sobra, como una bola.
+  // El dibujo vive en `kit.arbol`: tronco ahusado, ramas a la vista y copa de hojas en tres
+  // pisos de tono —el de arriba recibe la luz, el de abajo se hunde—. Antes era un tronco con
+  // tres esferas, y sin raíces ni moteado un árbol a la intemperie se lee pegado a la tierra.
   for (const [tx2, tz2, semilla] of [[5.5, -5.5, 41], [-6.8, 5.6, 42]]) {
     const r = secuencia(semilla);
-    cil('tronco', .26, 3.2, tx2, 1.6, tz2);
-    for (let i = 0; i < 3; i++) {                       // raíces que agarran el suelo
-      const a = (i / 3) * Math.PI * 2 + r() * .6;
-      lote('cil', 'tronco', tx2 + Math.cos(a) * .5, .16, tz2 + Math.sin(a) * .5,
-        { rz: Math.cos(a) * 1.05, rx: -Math.sin(a) * 1.05, esc: [.2, 1.15, .2], sombra: false });
-    }
-    const tonos = ['hoja', 'hojaClara', 'hoja', 'hojaSeca'];
-    for (let i = 0; i < 6; i++) {                       // copa irregular por lóbulos
-      const a = (i / 6) * Math.PI * 2 + r() * .8;
-      const d = .4 + r() * 1.1;
-      lote('esfera', tonos[i % 4], tx2 + Math.cos(a) * d, 3.5 + r() * 1.5, tz2 + Math.sin(a) * d,
-        { esc: [1.5 + r() * .9, 1.3 + r() * .6, 1.5 + r() * .9] });
-    }
+    kit.arbol(tx2, tz2, {
+      alto: 3.9, radio: .38, copa: 1.95, yCopa: 5.2, altoCopa: 1.35,
+      ramas: 4, bajas: 0, raices: 4, pies: false, manojos: 12, hojas: 2, colgantes: 3,
+      semilla, madera: 'troncoFino',
+    });
     for (let i = 0; i < 3; i++) {                       // luz moteada al pie
       const a = r() * Math.PI * 2, d = .7 + r() * 1.4;
       lote('cil', 'hojaSeca', tx2 + Math.cos(a) * d, .17, tz2 + Math.sin(a) * d,
         { esc: [.5 + r() * .5, .015, .4 + r() * .4], sombra: false });
     }
-    kit.colisionCirculo(tx2, tz2, .5);
+    kit.colisionCirculo(tx2, tz2, .5, 3.2);            // el tronco: la copa se atraviesa volando
   }
 }

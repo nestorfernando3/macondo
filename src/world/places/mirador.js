@@ -33,6 +33,11 @@ export function buildMirador(ctx) {
   const cerro = new THREE.Mesh(new THREE.CylinderGeometry(7.5, 9.5, MT, 20), kit.m('tierra'));
   cerro.position.set(MX, MT / 2, MZ); cerro.receiveShadow = cerro.castShadow = true; scene.add(cerro);
   kit.world.addPlateau(MX, MZ, 7.5, MT);
+  // La falda del cerro es suelo, no un escalón: el cono va de 3 m en el borde de la meseta a 0
+  // en la base, así que la mariposa sube la ladera y entra en la meseta por donde quiera. Antes
+  // el cerro era un cilindro invisible: la ladera no existía para el vuelo y la meseta sólo
+  // tenía una puerta, la rampa.
+  kit.world.addFalda(MX, MZ, 7.5, 9.5, MT);
   // Anillo de piedra de la falda: sostiene el cerro y da escala. Cada piedra va A LO LARGO de
   // la circunferencia —con `ry: -a` el eje z local es la tangente— y mide 2,35 m para un paso
   // de 2,08: cierran el anillo con un 10 % de solape. Antes medían 0,7 m en tangente y dejaban
@@ -51,33 +56,36 @@ export function buildMirador(ctx) {
   const rampa = new THREE.Mesh(new THREE.BoxGeometry(2.4, .25, 4.61), kit.m('piedra'));
   rampa.position.set(MX, 1.38, 15.75); rampa.rotation.x = -Math.atan2(MT, 3.5);
   rampa.castShadow = rampa.receiveShadow = true; scene.add(rampa);
-  kit.colisionCaja(15.7, 14, 16, 17.7);
-  kit.colisionCaja(18, 14, 18.3, 17.7);
   for (let z = 14.3; z < 17.6; z += .9) {
     const y = ground0(z);
     for (const px of [15.85, 18.15]) {
       lote('cil', 'madera', px, y + .45, z, { esc: [.11, .9, .11] });
       lote('caja', 'maderaClara', px, y + .86, z, { esc: [.13, .07, .9] });
     }
+    // Colisión del barandal, tramo a tramo y con el remate de cada tramo: sube con la rampa,
+    // como el barandal dibujado. Un solo prisma de 14 a 17,7 habría dejado un muro de cuatro
+    // metros en el arranque, que es media rampa por debajo del vuelo de crucero.
+    const alto = y + .9;
+    const z2 = Math.min(17.7, z + .9);
+    kit.colisionCaja(15.7, z, 16, z2, alto);
+    kit.colisionCaja(18, z, 18.3, z2, alto);
   }
   // Escalones de piedra al pie de la rampa.
   for (let i = 0; i < 3; i++) {
     lote('caja', 'piedra', MX, .1 + i * .1, 13.6 - i * .45, { esc: [2.6, .18, .5] });
   }
 
-  // ---------- Anillos de colisión del borde (idénticos a la versión anterior) ----------
-  kit.colisionCaja(9.2, 30.2, 24.8, 30.8);
-  kit.colisionCaja(9.2, 15.2, 15.6, 15.8);
-  kit.colisionCaja(18.4, 15.2, 24.8, 15.8);
-  kit.colisionCaja(9.2, 15.2, 9.8, 30.8);
-  kit.colisionCaja(24.2, 15.2, 24.8, 30.8);
-  kit.colisionCaja(8.5, 13.6, 15.5, 14.2);
-  kit.colisionCaja(18.5, 13.6, 25.5, 14.2);
-  kit.colisionCaja(8.5, 31.6, 25.5, 32.2);
-  kit.colisionCaja(8.1, 13.6, 8.7, 32.2);
-  kit.colisionCaja(25.3, 13.6, 25.9, 32.2);
-  kit.colisionCaja(8.7, 13.6, 11, 16);
-  kit.colisionCaja(23, 13.6, 25.3, 16);
+  // ---------- Colisión del borde: la baranda y las piedras de la falda ----------
+  // Antes eran dos anillos de cajas rectangulares invisibles que cercaban la meseta a
+  // cualquier altura —el vuelo se detenía a nueve metros del mirador, en plena ladera y sin
+  // nada delante—. Ahora cada anillo sigue a su pieza: los postes de la baranda, con su remate
+  // de un metro sobre la meseta, y las piedras de la falda, que se pasan por encima.
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2;
+    if (Math.abs(a - Math.PI * 1.5) < .55) continue;     // las dos del arranque de la rampa
+    const r = 8.6 + (i % 2) * .22;
+    kit.colisionCirculo(MX + Math.cos(a) * r, MZ + Math.sin(a) * r, .55, MT * .35 + .55);
+  }
 
   // ---------- Baranda de la meseta (postes de madera y cuerda) ----------
   for (let i = 0; i < 22; i++) {
@@ -85,6 +93,7 @@ export function buildMirador(ctx) {
     if (Math.abs(a - Math.PI * 1.5) < .4) continue;      // hueco hacia la rampa
     lote('cil', 'madera', MX + Math.cos(a) * 7.05, MT + .48, MZ + Math.sin(a) * 7.05, { esc: [.11, .98, .11] });
     lote('caja', 'maderaClara', MX + Math.cos(a) * 7.05, MT + .9, MZ + Math.sin(a) * 7.05, { esc: [.14, .07, .5] });
+    kit.colisionCirculo(MX + Math.cos(a) * 7.05, MZ + Math.sin(a) * 7.05, .3, MT + .98);
   }
   const anillo = new THREE.Mesh(new THREE.TorusGeometry(7.05, .04, 6, 44), kit.m('madera'));
   anillo.rotation.x = Math.PI / 2; anillo.position.set(MX, MT + .92, MZ); scene.add(anillo);
@@ -166,7 +175,7 @@ export function buildMirador(ctx) {
     posB.needsUpdate = true;
     bandera.rotation.y = Math.sin(t * .5) * .4;
   });
-  kit.colisionCirculo(14.8, 24.5, .3);
+  kit.colisionCirculo(14.8, 24.5, .3, MT + 2.6);      // el asta y su bandera
 
   // ---------- Vegetación xerófila del borde ----------
   const r = secuencia(303);

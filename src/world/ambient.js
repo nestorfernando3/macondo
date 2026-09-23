@@ -320,9 +320,9 @@ function creaPolvo(kit, rnd) {
 // encogiéndose de verdad, entre 1,1 m y 2,7 m, no de un salto.
 const TINTAS_PETALO = ['flor', 'florRoja', 'blanco'];
 function creaPetalos(kit, camera, quieto, rnd, arbol) {
-  // La copa del árbol del tiempo vive a y≈6,3 con radio ~2 (places/jardin.js): de ahí caen,
+  // La copa del árbol del tiempo vive a y≈6,2 con radio ~2,4 (places/jardin.js): de ahí caen,
   // no del aire a un metro del suelo como antes.
-  const COPA = 6.2, RADIO = 1.9, SUELO = .07;
+  const COPA = 6.1, RADIO = 2.2, SUELO = .07;
   const petalos = [];
   for (let i = 0; i < 26; i++) {
     petalos.push({

@@ -63,6 +63,13 @@ test('el agua no se cruza y el muelle sí',()=>{
 test('cada encuentro conserva un punto de aproximación libre',()=>{
  assert.deepEqual(problemasDe('encuentros'), [], 'un encuentro quedó cercado');
 });
+test('ningún lugar queda cercado para el vuelo',()=>{
+ // La meseta del mirador estuvo cercada por dos anillos de colisión que bloqueaban a
+ // cualquier altura: el vuelo se detenía a nueve metros del destino y el único camino era la
+ // rampa. Esta prueba vuela —sobre el papel— desde el arranque y exige llegar a los seis.
+ assert.deepEqual(problemasDe('vuelo'), [], 'algún lugar dejó de alcanzarse volando');
+ assert.equal(pueblo.invariantes.revisados.lugaresVolables, Object.keys(LOCATIONS).length);
+});
 test('los muros tapan la vista y la puerta no',()=>{
  // Antes esto se probaba con un doble del registry (nunca se ejercía `lineOfSight` de
  // verdad) y `sightBlocks` estaba siempre vacío: la oclusión no existía. Ahora se cruza

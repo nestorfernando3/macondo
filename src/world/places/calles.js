@@ -50,5 +50,5 @@ export function buildCalles(ctx) {
 
   // Tendedero entre dos casas de la calle este, lejos de la ruta del jardín.
   kit.tendedero(11.4, -7.9, 11.4, -4.2, { alto: 2.5, telas: 2, semilla: 21 });
-  kit.colisionCaja(11.15, -8, 11.65, -4.1);
+  kit.colisionCaja(11.15, -8, 11.65, -4.1, 2.55);      // la cuerda del tendedero y sus telas
 }

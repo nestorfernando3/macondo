@@ -88,5 +88,20 @@
     "hash": "f4c18ee606b7a2d4",
     "voz": "gloria",
     "bytes": 246528
+  },
+  "lectura-remedios": {
+    "hash": "b4658745a476f168",
+    "voz": "gloria",
+    "bytes": 291888
+  },
+  "lectura-hielo": {
+    "hash": "cacef9873db70e9a",
+    "voz": "gloria",
+    "bytes": 281088
+  },
+  "lectura-pescaditos": {
+    "hash": "e281946c30abc0ce",
+    "voz": "gloria",
+    "bytes": 267984
   }
 }

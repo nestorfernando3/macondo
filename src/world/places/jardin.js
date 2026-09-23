@@ -38,7 +38,9 @@ export function buildJardin(ctx) {
       lote('caja', 'hojaClara', px, cuerpo + r() * .07, pz,
         { ry: (r() - .5) * .4, esc: [ancho * .78, .22 + r() * .14, fondo * .78], sombra: false });
     }
-    kit.colisionCaja(JX + hx - hw / 2, JZ + hz - hd / 2, JX + hx + hw / 2, JZ + hz + hd / 2);
+    // El seto mide entre 0,86 y 1,2 m más el copete: se pasa por encima, como el vuelo de
+    // crucero (2,1 m) pide, y sólo detiene a ras de suelo.
+    kit.colisionCaja(JX + hx - hw / 2, JZ + hz - hd / 2, JX + hx + hw / 2, JZ + hz + hd / 2, 1.45);
   }
 
   // ---------- Sendero curvo de piedra ----------
@@ -77,52 +79,16 @@ export function buildJardin(ctx) {
   }
 
   // ---------- Árbol del tiempo (ancla del encuentro arbol-tiempo) ----------
+  // La pieza vive en el kit (`kit.arbol`) y aquí sólo se dice dónde y de qué tamaño: es el
+  // único árbol del pueblo que se mira a un metro, así que es el que lleva ramas a la vista,
+  // helechos en la corteza y flores —las que después caen por la capa de vida—.
   const arbol = ancla('arbol-tiempo');
-  const r = secuencia(9);
-  cil('tronco', .45, 4.2, arbol.x, 2.1, arbol.z);
-  // Raíces: ocho en ronda, de largo distinto, que se apoyan en el suelo. La base deja de
-  // ser un cilindro clavado en la tierra.
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2 + .2;
-    const largo = 1.05 + r() * .5;
-    lote('cil', 'tronco', arbol.x + Math.cos(a) * .5, .16, arbol.z + Math.sin(a) * .5,
-      { rz: Math.cos(a) * 1.3, rx: -Math.sin(a) * 1.3, esc: [.3, largo, .3] });
-  }
-  for (let i = 0; i < 4; i++) {                  // ramas que se abren hacia arriba
-    const a = i * 1.6 + .3;
-    lote('cil', 'tronco', arbol.x + Math.cos(a) * .55, 4.5, arbol.z + Math.sin(a) * .55,
-      { rz: Math.cos(a) * .42, rx: -Math.sin(a) * .42, esc: [.22, 2.2, .22] });
-  }
-  // Y dos ramas bajas: dan profundidad a la corona desde la altura de la mariposa.
-  for (let i = 0; i < 2; i++) {
-    const a = 2.4 + i * 2.6;
-    lote('cil', 'tronco', arbol.x + Math.cos(a) * .7, 3.1, arbol.z + Math.sin(a) * .7,
-      { rz: Math.cos(a) * .78, rx: -Math.sin(a) * .78, esc: [.17, 1.7, .17] });
-  }
-  // Copa más redonda: más lóbulos en dos pisos para que la corona cierre por arriba.
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * Math.PI * 2;
-    lote('esfera', i % 2 ? 'hoja' : 'hojaClara',
-      arbol.x + Math.cos(a) * (1 + r() * .9), 4.7 + r() * 1.3, arbol.z + Math.sin(a) * (1 + r() * .9),
-      { esc: [2.2 + r(), 1.8 + r() * .8, 2.2 + r()] });
-  }
-  for (let i = 0; i < 2; i++) {
-    const a = i * 2.4 + .6;
-    lote('esfera', i ? 'hojaClara' : 'hoja', arbol.x + Math.cos(a) * .9, 6.1 + i * .4, arbol.z + Math.sin(a) * .9,
-      { esc: [2.4 + r() * .5, 1.7, 2.4 + r() * .5] });
-  }
-  lote('esfera', 'hoja', arbol.x, 6.5, arbol.z, { esc: [3.4, 2.2, 3.4] });
-  // Musgo y epífitas: briznas al pie del tronco y hojas colgando de las ramas bajas. La
-  // madera viva no es un caño liso: en el trópico el tronco cría helechos y bejucos.
+  kit.arbol(arbol.x, arbol.z, { alto: 4.3, radio: .48, copa: 2.4, yCopa: 6.2, altoCopa: 1.6, ramas: 5, semilla: 9, manojos: 28, hojas: 4, colgantes: 7, helechos: 4, flores: 10 });
+  // Musgo y epífitas al pie: la madera viva no es un caño liso y la base del tronco cría
+  // hierba y helechos, que es donde la mariposa se posa.
   kit.briznas(kit, arbol.x + .85, arbol.z + .35, { n: 7, alto: .34, radio: .5, semilla: 91 });
   kit.briznas(kit, arbol.x - .7, arbol.z - .65, { n: 6, alto: .3, radio: .45, semilla: 92, mate: 'hojaSeca' });
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2 + .4;
-    lote('petalo', i % 3 ? 'hojaClara' : 'hoja',
-      arbol.x + Math.cos(a) * (1.15 + r() * .5), 3.8 + r() * 1.2, arbol.z + Math.sin(a) * (1.15 + r() * .5),
-      { rx: -.9 - r() * 1.2, ry: a, esc: [.3, 1, .34], sombra: false });
-  }
-  kit.colisionCirculo(arbol.x, arbol.z, .7);
+  kit.colisionCirculo(arbol.x, arbol.z, .7, 4.2);      // el tronco; la copa se atraviesa volando
 
   // ---------- Bancal, maceteros y aperos ----------
   const banca = ancla('objeto-espiral');         // la espiral de mariposas gira sobre ella
@@ -145,4 +111,17 @@ export function buildJardin(ctx) {
   cil('hierro', .12, .34, 28.4, .62, -12.2);
   cil('hierro', .05, .46, 28.62, .66, -12.2, { rz: -1.1 });
   kit.cerca(20.4, -15.4, 24.6, -15.4, { alto: .9 });
+
+  // ---------- El tendal de bramante (ancla «sabanas-bramante») ----------
+  // La tarde de marzo del capítulo 12 empieza aquí: Fernanda dobla en el jardín sus sábanas de
+  // bramante y pide ayuda a las mujeres de la casa. El tendal es el ancla del encuentro, y de
+  // él sale la ascensión que dibuja src/world/remedios.js — por eso las dos piezas leen la
+  // misma coordenada en vez de repetir el literal. Va en el claro del norte, el único tramo del
+  // jardín sin macetas, bancales ni el árbol del tiempo, y deja libres las doce aproximaciones
+  // que vigila el invariante `encuentros`.
+  const tendal = ancla('sabanas-bramante');
+  kit.tendedero(tendal.x - 1.8, tendal.z, tendal.x + 1.8, tendal.z, { alto: 2.4, telas: 3, semilla: 33 });
+  // Los dos postes paran a ras —el vuelo de crucero (2,1 m) mira por debajo del cordel, a
+  // 2,4 m—, y el cordel y la ropa se atraviesan volando, como el resto de los tendederos.
+  for (const lado of [-1, 1]) kit.colisionCirculo(tendal.x + lado * 1.8, tendal.z, .14, 2.4);
 }

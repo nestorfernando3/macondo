@@ -28,6 +28,10 @@ const VISTAS = [
   ['prado_vuelo', 4.5, 2.35, 9, 7.5, .1, 14],   // como lo ve la mariposa al volar (2,1 m)
   ['prado_rasante', 5.5, .8, 11, 7, .25, 15],   // a ras: el prado de cerca
   ['arbol_tiempo', 21.5, 2.2, -8, 25, 3, -11],
+  // El árbol entero: la pieza del jardín mide ocho metros y a un metro de distancia sólo se
+  // ve el tronco, así que el juicio del modelo —tronco, horquilla, copa, contrafuertes— se
+  // hace desde el aire, que es como lo mira la mariposa al volar.
+  ['arbol_tiempo_entero', 20.6, 8.2, -3.4, 25, 4.6, -8.8],
   ['puesto_plaza', 8.2, 1.4, -2, 8.2, .8, -3.4],
   ['bote_puerto', -29, 1.2, 3.2, -31.5, .7, 3.2],
   ['orilla_puerto', -25, 1.6, 8, -23.6, .6, 12],

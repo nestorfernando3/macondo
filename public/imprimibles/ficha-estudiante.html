@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha del estudiante · Macondo: un pueblo para recorrer</title>
+<style>
+  :root { --tinta:#111; --gris:#333; --linea:#666; --linea-fuerte:#111; --suave:#eee; }
+  * { box-sizing:border-box; }
+  html { font-size:12pt; }
+  body {
+    font-family:Georgia, "Times New Roman", serif;
+    color:var(--tinta); background:#fff;
+    margin:0; padding:26px 22px; line-height:1.4;
+  }
+  .hoja { max-width:760px; margin:0 auto; }
+
+  header.membrete {
+    display:flex; justify-content:space-between; align-items:baseline;
+    gap:14px; flex-wrap:wrap;
+    border-bottom:3px double var(--linea-fuerte);
+    padding-bottom:8px; margin-bottom:12px;
+  }
+  .membrete h1 { font-size:1.25rem; margin:0; }
+  .membrete .sub { margin:0; font-size:.82rem; color:var(--gris); text-align:right; }
+
+  .datos { display:flex; gap:18px; flex-wrap:wrap; font-size:.9rem; margin:10px 0 6px; }
+  .datos .campo { flex:1 1 150px; border-bottom:1px solid var(--tinta); padding:2px 0; }
+
+  .aviso { font-size:.85rem; color:var(--gris); margin:8px 0 4px; border-left:3px solid var(--linea-fuerte); padding-left:10px; }
+
+  h2 { font-size:1rem; margin:16px 0 4px; border-bottom:1px solid var(--linea); padding-bottom:2px; }
+  p { margin:4px 0; }
+  strong { font-weight:700; }
+
+  .opciones { margin:4px 0 6px; }
+  .opciones li { list-style:none; margin:3px 0; }
+  ul.limpia { list-style:none; margin:4px 0; padding:0; }
+
+  .caja {
+    display:inline-block; width:1rem; height:1rem;
+    border:1.5px solid var(--linea-fuerte); margin-right:7px;
+    vertical-align:-2px;
+  }
+  .relleno { border-bottom:1px solid var(--linea-fuerte); height:1.5rem; margin:7px 0; }
+  .relleno-corto { border-bottom:1px solid var(--linea-fuerte); display:inline-block; min-width:45%; height:1.1rem; vertical-align:-3px; }
+
+  .nota { font-size:.85rem; color:var(--gris); }
+
+  footer.pie {
+    border-top:2px solid var(--linea-fuerte);
+    margin-top:18px; padding-top:8px;
+    font-size:.78rem; color:var(--gris);
+  }
+
+  @media print {
+    @page { margin:14mm; }
+    html { font-size:11pt; }
+    body { padding:0; }
+    .hoja { max-width:none; }
+    h2 { page-break-after:avoid; }
+    .bloque { page-break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="hoja">
+
+  <header class="membrete">
+    <h1>Ficha del estudiante · Macondo: un pueblo para recorrer</h1>
+    <p class="sub">Lengua Castellana · secundaria · 2026<br><em>Cien años de soledad</em></p>
+  </header>
+
+  <div class="datos">
+    <span class="campo"><strong>Nombre:</strong></span>
+    <span class="campo"><strong>Curso:</strong></span>
+    <span class="campo"><strong>Fecha:</strong></span>
+  </div>
+
+  <p class="aviso">Llene esta hoja <strong>a mano</strong>, junto al teclado o después del recorrido. No hay respuestas correctas. Veinte minutos bastan, y no hay que llenar todo.</p>
+
+  <div class="bloque">
+    <h2>1. El lugar que visité</h2>
+    <p>Marque los lugares por los que pasó y escriba <strong>el que más le gustó</strong>.</p>
+    <ul class="opciones">
+      <li><span class="caja"></span>Plaza de llegada</li>
+      <li><span class="caja"></span>Casa de la memoria (y su patio)</li>
+      <li><span class="caja"></span>Jardín del tiempo</li>
+      <li><span class="caja"></span>Puerto de la espera</li>
+      <li><span class="caja"></span>Mirador de las historias</li>
+    </ul>
+    <p><strong>El que más me gustó:</strong> <span class="relleno-corto"></span></p>
+  </div>
+
+  <div class="bloque">
+    <h2>2. Qué objeto me habló</h2>
+    <p>Escriba el objeto y <strong>qué le dijo</strong> (o qué sintió al mirarlo).</p>
+    <p><strong>Objeto:</strong> <span class="relleno-corto"></span></p>
+    <p><strong>Qué me dijo:</strong></p>
+    <div class="relleno"></div>
+    <div class="relleno"></div>
+  </div>
+
+  <div class="bloque">
+    <h2>3. Una palabra nueva del pueblo</h2>
+    <p>Escriba una palabra que aprendió en el paseo y su significado.</p>
+    <p><strong>Palabra:</strong> <span class="relleno-corto" style="min-width:30%"></span> &nbsp; <strong>Significa:</strong> <span class="relleno-corto" style="min-width:40%"></span></p>
+    <div class="relleno"></div>
+    <p class="nota">Puede encontrar palabras del Caribe como: cañabrava, nasa, totuma, guineo, malanga, alcaraván, galeón, buhonero.</p>
+  </div>
+
+  <div class="bloque">
+    <h2>4. Una frase que me llevo</h2>
+    <div class="relleno"></div>
+    <div class="relleno"></div>
+  </div>
+
+  <div class="bloque">
+    <h2>5. Tres frases propias</h2>
+    <p>Sobre algo cotidiano que me parezca extraordinario.</p>
+    <div class="relleno"></div>
+    <div class="relleno"></div>
+    <div class="relleno"></div>
+  </div>
+
+  <div class="bloque">
+    <h2>6. Hallazgos (0/6)</h2>
+    <p>Marque lo que encontró en el pueblo y cuente el total.</p>
+    <ul class="opciones">
+      <li><span class="caja"></span>Una bienvenida amarilla (en el umbral de entrada)</li>
+      <li><span class="caja"></span>El agua recuerda (junto a la fuente de la plaza)</li>
+      <li><span class="caja"></span>La casa escucha (al cruzar la puerta hacia el patio)</li>
+      <li><span class="caja"></span>Una flor fuera del tiempo (entre las mariposas del jardín)</li>
+      <li><span class="caja"></span>Lo que trae la corriente (al recorrer el muelle)</li>
+      <li><span class="caja"></span>Todo cabe en una mirada (al subir al mirador)</li>
+    </ul>
+    <p><strong>Hallazgos: ______ / 6</strong></p>
+  </div>
+
+  <footer class="pie">
+    <span>Macondo es una interpretación artística; no es la novela. La única cita textual es la ascensión de Remedios, la bella (cap. 12), atribuida a Gabriel García Márquez. · 2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

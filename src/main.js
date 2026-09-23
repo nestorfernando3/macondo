@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { Experience } from './core/Experience.js';
 import { createVillage } from './world/createVillage.js';
 import { createButterfly } from './world/butterflyAvatar.js';
-import { PlayerController } from './navigation/PlayerController.js';
+import { PlayerController, empujeVertical, PITCH_MIN, PITCH_MAX, PITCH_REPOSO } from './navigation/PlayerController.js';
 import { InputController } from './navigation/InputController.js';
 import { TourController } from './navigation/TourController.js';
 import { Locomocion } from './navigation/Locomocion.js';
@@ -24,9 +24,18 @@ import { TourNarrator } from './audio/TourNarrator.js';
 import { AmbientBed } from './audio/AmbientBed.js';
 import { createBeacon } from './world/beacon.js';
 import { capturarPostal } from './world/postal.js';
+// Capa literaria: la ficha «En la novela», el índice de capítulos, el árbol de los Buendía, el
+// cuaderno de palabras y el pergamino. Son módulos de DOM, sin Three.js, y no tocan el paseo.
+import { crearFichaNovela, crearIndiceNovela, crearCuadernoPalabras, crearSelloOrigen } from './ui/NovelaPanel.js';
+import { crearArbol } from './ui/ArbolPanel.js';
+import { crearPergamino } from './ui/Pergamino.js';
+import { crearLluvia } from './world/lluvia.js';
 
 const $ = s => document.querySelector(s);
 const EYE = 1.65;
+// Radianes de cámara por píxel de ratón, para girar y para inclinar. El mismo número sirve
+// con el puntero capturado (movimiento continuo) y con el arrastre táctil.
+const SENS_GIRO = .0026;
 const raycaster = new THREE.Raycaster();
 const sueloPlano = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -116,6 +125,7 @@ function aplicar(e) {
 let panelOpener = null;
 function blockPanel(){
   aplicar(locomocion.bloquear());
+  input?.release();          // sin cursor, los botones del panel quedan fuera de alcance
   panelOpener = document.activeElement;
 }
 function releasePanel(){
@@ -127,11 +137,13 @@ function releasePanel(){
 }
 
 // ---------- Experiencia 3D ----------
-let experience, village, player, input, tour, interactions, effects, beacon;
+let experience, village, player, input, tour, interactions, effects, beacon, lluvia;
+let lluviaNivel = 0;           // aguacero del capítulo 16: apagado hasta que lo pidan
 let worldReady = false;
 let discoveryWorld;
 let worldTime = 0;
 let discoveryTimer;
+let lockHintTimer;
 let found = new Set();
 try { found = restoreDiscoveries(JSON.parse(localStorage.getItem(DISCOVERIES_KEY))); } catch {}
 function renderDiscoveries() {
@@ -165,6 +177,8 @@ function initWorld(){
   interactions.setItems(village.interactables);
   effects = createStoryEffects(experience.scene);
   beacon = createBeacon(experience.scene, village.world);
+  lluvia = crearLluvia(experience.scene, { radio: 11, cantidad: 620 });
+  lluvia.set(lluviaNivel);                       // recuerda lo que se pidió antes de entrar
   for (const r of Object.values(historias.results)) {
     const st = STORIES.find(s => s.id === r.storyId);
     const out = st?.outcomes.find(o => o.id === r.outcomeId);
@@ -172,18 +186,28 @@ function initWorld(){
   }
   experience.onTick((dt, t) => {
     if (!ambientPaused) { worldTime += dt; village.update(worldTime); beacon.update(worldTime); }
+    // La cortina de lluvia sigue a la mariposa aunque el pueblo esté en pausa: es un estado del
+    // clima, no un movimiento del paisaje; con la pausa no avanza, pero no se queda atrás.
+    if (lluviaNivel) lluvia?.update(ambientPaused ? 0 : dt, player.position);
     ambiente.update(player.position.x);          // el río suena más cerca de la orilla
     const viaje = locomocion.estado;
     if (viaje.modo !== 'paseo') { input.clear(); return; }
-    window.__macondo = { player, experience, village, tour, interactions, director, effects, historias, narrator, beacon, ambiente, locomocion,
+    window.__macondo = { player, experience, village, tour, interactions, director, effects, historias, narrator, beacon, ambiente, locomocion, lluvia,
       get ultimaPostal() { return ultimaPostal; } }; // gancho de verificación
     discoveryWorld.update(player.position, worldTime, !ambientPaused);
     const s = input.sample();
-    if (s.look.x || s.look.y) {                       // orbitar la cámara alrededor de la mariposa
-      player.orbitYaw -= s.look.x * .0045;
-      player.orbitPitch = Math.max(-.05, Math.min(1.05, player.orbitPitch + s.look.y * .003));
+    if (s.look.x || s.look.y) {                       // el ratón orbita la cámara alrededor de la mariposa
+      player.orbitYaw -= s.look.x * SENS_GIRO;
+      player.orbitPitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, player.orbitPitch + s.look.y * SENS_GIRO));
+      // Quien mira manda: mientras la cámara persigue el rumbo (vuelo por punto, recorrido)
+      // el giro del ratón se desharía solo. Un giro con el ratón suelta la perseguidora y el
+      // vuelo sigue su rumbo; R la vuelve a centrar.
+      if (s.look.x) player.followCam = false;
     }
-    const manual = s.move.fwd || s.move.right || s.move.up || s.joy.x || s.joy.y;
+    // La altura la manda la mirada (subir/bajar con Espacio y Shift ya no existe): inclinar
+    // la cámara empuja el vuelo arriba o abajo y el horizonte lo sostiene.
+    s.move.up = empujeVertical(player.orbitPitch);
+    const manual = s.move.fwd || s.move.right || s.joy.x || s.joy.y;
     if (viaje.recorrido && !viaje.pausado) {
       if (manual) { stopTour(); player.update(dt, s); }            // solo el movimiento manual cancela; mirar no
       else tour.update(dt);
@@ -209,13 +233,25 @@ function initWorld(){
   village.update(0);
   experience.start();
   setupLookTouch();
-  setupAltitude();
+  // La mira sólo existe con el puntero capturado: es el punto al que vuela el clic. El aviso
+  // que la acompaña dice cómo recuperar el cursor, y se apaga solo: no es un cartel fijo.
+  document.addEventListener('pointerlockchange', () => {
+    const capturado = !!input?.locked;
+    document.body.classList.toggle('pointer-locked', capturado);
+    // El chip es un conmutador de verdad: rótulo fijo y estado en aria-pressed, igual que
+    // Voz, Sonido y Guiarme. Esc lo apaga solo porque pasa por aquí.
+    $('#free-look').setAttribute('aria-pressed', String(capturado));
+    clearTimeout(lockHintTimer);
+    $('#lock-hint').hidden = !capturado;
+    if (capturado) lockHintTimer = setTimeout(() => { $('#lock-hint').hidden = true; }, 7000);
+  });
 }
 
 // ---------- Portada y transición de descenso ----------
 function showCover(){
   aplicar(locomocion.ir('portada'));
-  document.body.classList.remove('exploring');
+  input?.release();
+  document.body.classList.remove('exploring', 'pointer-locked');
   $('#hud').hidden = true;
   $('#caption').hidden = true;
   if (experience) {
@@ -360,8 +396,19 @@ function openReading(contentId){
   blockPanel();
   $('#reading-tag').textContent = st.tag;
   $('#reading-title').textContent = st.title;
+  // La cita textual va antes de la glosa y con su atribución pegada. Sólo la trae la estación
+  // de Remedios: es la única transcripción literal de la novela en toda la experiencia.
+  $('#reading-cita').hidden = !st.cita;
+  $('#reading-cita-texto').textContent = st.cita ?? '';
+  $('#reading-cita-fuente').textContent = st.citaFuente ?? '';
   $('#reading-body').textContent = st.body;
   $('#reading-work').textContent = st.work;
+  // Capa literaria: el sello dice de dónde viene cada cosa y la ficha glosa el tema de la
+  // estación con su capítulo y sus datos verificables. Sin ficha, la sección no se muestra.
+  const capa = $('#reading-novela');
+  const ficha = crearFichaNovela(st.id);
+  capa.hidden = !ficha;
+  capa.replaceChildren(...(ficha ? [crearSelloOrigen('instalacion'), ficha] : []));
   $('#reading-quiz').hidden = !st.question;          // pasajes nuevos: lectura sin quiz
   $('#reading-conversa').hidden = !st.conversa;
   if (st.conversa) $('#reading-conversa').textContent = st.conversa;
@@ -381,7 +428,10 @@ function openReading(contentId){
   }
   $('#reading-listen').hidden = !narrator.has('lectura-' + st.id);
   $('#reading-listen').onclick = () => narrator.play('lectura-' + st.id, { force:true });
-  $('#source').href = st.source;
+  // La fuente de una cita es el libro, no la página del Nobel que citan las demás estaciones:
+  // con `source:null` el enlace se retira en vez de apuntar a un sitio que no es su origen.
+  $('#source').hidden = !st.source;
+  if (st.source) $('#source').href = st.source;
   $('#reading').showModal();
 }
 function closeReading(){ if ($('#reading').open) $('#reading').close(); }
@@ -495,7 +545,10 @@ function updateCount(field, out){
 function progresoTour(){ return ' · ' + TOUR_ORDER.filter(i => state.discovered.has(i)).length + '/' + TOUR_ORDER.length; }
 function startTour(destId){
   if (!tour.startTo(destId, player.position)) return;
-  player.resetAltitude();  // el relato y las llegadas están escritos para la altura de crucero
+  // El relato y las llegadas están escritos para la altura de crucero, y la mirada es ahora
+  // el mando de altura: sin devolverla al horizonte, el recorrido arrancaría subiendo.
+  player.resetAltitude();
+  player.recenter();
   const narrado = narrator.enabled && narrator.has('camino-' + destId);
   tour.speed = narrado ? 1.7 : 2.8;                  // narrado: paso más despacio
   aplicar(locomocion.recorrido('iniciar'));
@@ -536,6 +589,20 @@ $('#audio-voice').onclick = () => {
 $('#audio-ambient').onclick = () => {
   ambiente.setEnabled(!ambiente.enabled);
   $('#audio-ambient').setAttribute('aria-pressed', String(ambiente.enabled));
+};
+// El aguacero del capítulo 16: un estado del pueblo, no un adorno. Vive en el cajón con «Voz» y
+// «Sonido» —es un conmutador más—, así que el rótulo no cambia y el estado va en aria-pressed.
+$('#toggle-lluvia').onclick = () => {
+  lluviaNivel = lluviaNivel ? 0 : 2;
+  lluvia?.set(lluviaNivel);
+  if (lluvia && player) lluvia.update(0, player.position);
+  $('#toggle-lluvia').setAttribute('aria-pressed', String(!!lluviaNivel));
+};
+// Vista libre: el único sitio desde el que se captura el puntero. Antes lo hacía el propio
+// toque de volar y el primer clic de cualquiera dejaba el HUD sin cursor y sin poder pulsarse.
+// Aquí es una elección, con su chip, su mira y su aviso de cómo salir (Esc).
+$('#free-look').onclick = () => {
+  if (input?.locked) input.release(); else input?.request();
 };
 $('#take-postcard').onclick = async () => {
   if (!experience) return;
@@ -620,6 +687,11 @@ function refreshTraces(){
     li.append(text, b); return li;
   }));
   $('#writing-traces').hidden = traces.length === 0;
+  // El cuaderno, leído al final, se vuelve el pergamino que ya estaba escrito: recoge lo que el
+  // visitante dejó, sin volcar sus frases crudas y sin citar la novela.
+  $('#writing-pergamino').replaceChildren(crearPergamino(traces, {
+    fecha: new Date(), titulo: 'El pergamino del paseo',
+  }));
 }
 $('#writing-save').onclick = () => {
   const value = $('#writing-field').value.slice(0, MAX_WRITING);
@@ -664,26 +736,6 @@ function setupLookTouch(){
   addEventListener('blur', () => { joyId = null; knob.style.transform = ''; });
 }
 
-// Altura: los botones ▲▼ vuelan mientras se mantienen pulsados. La captura del puntero
-// garantiza el pointerup aunque el dedo se salga del botón, así que nunca queda pegado.
-function setupAltitude(){
-  const bind = (sel, dir) => {
-    const b = $(sel);
-    const start = () => input?.liftPress(dir);
-    const end = () => input?.liftRelease();
-    b.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      start();                                   // primero volar: la captura es sólo una red
-      try { b.setPointerCapture(e.pointerId); } catch {}
-    });
-    for (const ev of ['pointerup','pointercancel','lostpointercapture']) b.addEventListener(ev, end);
-    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); start(); } });
-    b.addEventListener('keyup', end);
-    b.addEventListener('blur', end);
-  };
-  bind('#fly-up', 1); bind('#fly-down', -1);
-}
-
 addEventListener('blur', () => { if (locomocion.estado.modo === 'paseo') { stopTour(); player?.stop(); } });
 document.addEventListener('visibilitychange', () => { if (document.hidden && locomocion.estado.modo === 'paseo') { stopTour(); player?.stop(); } });
 const onboarding = new Onboarding(document.querySelector('#onboarding'));
@@ -707,6 +759,14 @@ $('#to-plaza').onclick = () => { stopTour(); player.enabled = true; startTour('p
 $('#toggle-tour').onclick = () => { locomocion.estado.recorrido ? stopTour() : (player.enabled = true, startTour(TOUR_ORDER.find(id => !state.discovered.has(id)) || TOUR_ORDER[0])); };
 $('#tour-stop').onclick = () => { stopTour(); player.enabled = true; };
 $('#interact-btn').onclick = () => interactWithCurrent();
+// El cajón de lo ocasional. El rótulo dice lo que hace —abrir o cerrar— y el estado va en
+// aria-expanded, así que nombre y estado nunca se contradicen.
+$('#hud-mas').onclick = () => {
+  const abrir = $('#hud-extra').hidden;
+  $('#hud-extra').hidden = !abrir;
+  $('#hud-mas').setAttribute('aria-expanded', String(abrir));
+  $('#hud-mas').textContent = abrir ? 'Menos opciones' : 'Más opciones';
+};
 $('#help-btn').onclick = () => { blockPanel(); $('#help').showModal(); };
 $('#no3d').onclick = () => { $('#help').close(); showFallback(new Error('modo sin 3D solicitado')); };
 $('#reset-progress').onclick = () => {
@@ -732,10 +792,27 @@ document.querySelectorAll('dialog .close').forEach(b => b.onclick = e => {
   const d = e.target.closest('dialog');
   if (d.id === 'reading') closeReading(); else d.close();
 });
-for (const id of ['map','help','discoveries']) $(`#${id}`).addEventListener('close', releasePanel);
+for (const id of ['map','help','discoveries','indice','arbol','palabras']) $(`#${id}`).addEventListener('close', releasePanel);
 addEventListener('keydown', e => {
   if (e.key === 'Escape' && locomocion.estado.modo === 'paseo' && locomocion.estado.recorrido) stopTour();
 });
+
+// ---------- Capa literaria: índice, árbol y palabras ----------
+// Se construyen la primera vez que se abren y se cierran como cualquier panel. Ninguno bloquea
+// la lectura ni el paseo: son consulta.
+function abrirPanel(id, construir){
+  blockPanel();
+  const cuerpo = $(`#${id}-cuerpo`);
+  if (!cuerpo.childElementCount) cuerpo.append(construir());
+  $(`#${id}`).showModal();
+}
+$('#open-indice').onclick = () => abrirPanel('indice', crearIndiceNovela);
+$('#open-indice-ayuda').onclick = () => abrirPanel('indice', crearIndiceNovela);
+$('#fallback-indice').onclick = () => abrirPanel('indice', crearIndiceNovela);
+$('#open-arbol').onclick = () => abrirPanel('arbol', crearArbol);
+$('#fallback-arbol').onclick = () => abrirPanel('arbol', crearArbol);
+$('#open-palabras').onclick = () => abrirPanel('palabras', crearCuadernoPalabras);
+$('#fallback-palabras').onclick = () => abrirPanel('palabras', crearCuadernoPalabras);
 
 // ---------- Alternativa sin 3D ----------
 function showFallback(err){

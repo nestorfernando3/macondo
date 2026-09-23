@@ -1,7 +1,7 @@
 const KEY = 'macondo-tutorial-v1';
 const steps = [
-  ['Tu primer vuelo', 'Usa WASD o las flechas. Espacio te sube y Shift te baja; en pantalla táctil, el joystick y los botones ▲▼. También puedes tocar el suelo para volar.', 'moved'],
-  ['Mira a tu alrededor', 'Arrastra sobre el paisaje para girar la cámara. El botón Centrar cámara recupera la vista detrás de ti.', 'looked'],
+  ['Tu primer vuelo', 'Vuela con WASD o las flechas, o toca el suelo para ir hasta un punto. La altura la elige la mirada: mira arriba para subir y abajo para bajar. En pantalla táctil, joystick y arrastre.', 'moved'],
+  ['Mira a tu alrededor', 'Haz clic una vez en la escena: el ratón queda capturado y basta moverlo para girar (Esc lo suelta). Centrar cámara o R recuperan la vista detrás de ti.', 'looked'],
   ['El pueblo tiene historias', 'Acércate al reloj de la plaza. Cuando aparezca Explorar, pulsa ese botón o la tecla E. Mapa y Guiarme te llevan a los demás lugares.', 'explored'],
 ];
 export class Onboarding {

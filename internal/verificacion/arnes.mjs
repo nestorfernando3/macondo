@@ -137,6 +137,11 @@ export async function abrir(opciones = {}) {
     // dentro del elemento, reintentando si no.
     async clic(selector, { intentos = 5 } = {}) {
       const sel = JSON.stringify(selector);
+      // Lo que vive dentro del cajón «Más opciones» mide 0 × 0 mientras el cajón está cerrado,
+      // y ningún clic real alcanza lo que no tiene caja: se abre antes de intentarlo.
+      if (await js(`(() => { const el = document.querySelector(${sel});
+        return !!el && !!el.closest('#hud-extra') && document.querySelector('#hud-extra')?.hidden === true })()`))
+        await sesion.abrirCajon();
       for (let intento = 0; intento < intentos; intento++) {
         const caja = JSON.parse(await js(`(() => { const el = document.querySelector(${sel});
           if (!el) return 'null'; const r = el.getBoundingClientRect();
@@ -153,6 +158,13 @@ export async function abrir(opciones = {}) {
       }
       fallos.push(`el clic no alcanzó ${selector} en ${intentos} intentos`);
       return false;
+    },
+
+    // Abre el cajón «Más opciones» del HUD si está cerrado. Idempotente —abre, nunca cierra—,
+    // porque los guiones lo llaman antes de medir y `#hud-mas` es un conmutador.
+    async abrirCajon() {
+      if (await js(`document.querySelector('#hud-extra')?.hidden === true`)) await sesion.clic('#hud-mas');
+      return true;
     },
 
     // ¿Se puede clicar de verdad? Existe, se ve y está arriba en su punto central. Sirve

@@ -4,7 +4,6 @@
 import * as THREE from 'three';
 import { createRiver, riverHeight } from '../water.js';
 import { ancla } from '../anclas.js';
-import { secuencia } from '../kit.js';
 
 // La banca del correo: ahí cae la carta plegada del efecto `correo.carta-plegada`. Se exporta
 // para que el efecto lea la misma coordenada y la misma superficie en vez de repetirlas.
@@ -247,26 +246,17 @@ export function buildPuerto(ctx) {
   const vegetacionRibera = new THREE.Mesh(new THREE.PlaneGeometry(14,120),kit.m('hoja'));
   vegetacionRibera.rotation.x=-Math.PI/2; vegetacionRibera.position.set(-59,.16,-5); scene.add(vegetacionRibera);
 
-  // Orilla lejana: árboles al oeste del río para dar profundidad. Cada uno lleva ahora copa
-  // por lóbulos de tres tonos y dos raíces a la vista que se agarran a la arena. Como están
-  // al otro lado del agua y fuera del cuadro de sombras, todo entra por `lote` (sin sombra):
-  // seis árboles no cuestan seis mallas y el detalle es el que la distancia admite.
+  // Orilla lejana: árboles al oeste del río para dar profundidad. Salen de `kit.arbol`, la
+  // misma pieza que el árbol del tiempo, en su versión de lejos: tronco ahusado y copa, sin
+  // ramas a la vista ni helechos —de una orilla a otra hay más de 35 m y aquí sólo se lee la
+  // silueta—. Entran por `lote` sin sombra, así que seis árboles no cuestan seis mallas.
   for (const [tx, tz, s, semilla] of [[-52, 2, 1.4, 501], [-55, 10, 1.2, 502], [-51, 16, 1.5, 503],
     [-57, -4, 1.3, 504], [-53, 22, 1.1, 505], [-58, 14, 1.6, 506]]) {
-    const r = secuencia(semilla), alto = 3 * s;
-    lote('cil6', 'tronco', tx, alto / 2, tz, { esc: [.44 * s, alto, .44 * s] });
-    for (let i = 0; i < 2; i++) {                          // raíces expuestas sobre la arena
-      const a = r() * Math.PI * 2;
-      lote('cil6', 'tronco', tx + Math.cos(a) * .34 * s, .14, tz + Math.sin(a) * .34 * s,
-        { rz: Math.cos(a) * 1.12, rx: -Math.sin(a) * 1.12, esc: [.21 * s, 1.25 * s, .21 * s] });
-    }
-    for (let i = 0; i < 3; i++) {                          // copa irregular, tres tonos
-      const a = (i / 3) * Math.PI * 2 + r() * .6, d = (.55 + r() * .7) * s;
-      lote('esfera', i === 1 ? 'hojaClara' : (i === 2 ? 'hojaSeca' : 'hoja'),
-        tx + Math.cos(a) * d, alto + .6 * s + r() * .9 * s, tz + Math.sin(a) * d,
-        { esc: [1.9 * s * (.8 + r() * .4), 1.5 * s, 1.9 * s * (.8 + r() * .4)] });
-    }
-    lote('esfera', 'hoja', tx, alto + .8 * s, tz, { esc: [2.1 * s, 1.6 * s, 2.1 * s] });
+    kit.arbol(tx, tz, {
+      alto: 3.4 * s, radio: .38 * s, copa: 1.9 * s, yCopa: 4.6 * s, altoCopa: 1.3 * s,
+      ramas: 0, bajas: 0, raices: 3, pies: false, manojos: 7, hojas: 0, colgantes: 0,
+      semilla, madera: 'troncoFino',
+    });
   }
   // Matorral bajo de la ribera: manchas de verde que rompen la línea de la arena. Esfera de
   // pocas caras —de una orilla a otra hay más de 35 m—, en vez de la esfera de 80 del pueblo.
@@ -311,7 +301,7 @@ export function buildPuerto(ctx) {
   for (const pz of [6.9, 9.1]) {                          // pasamanos de cuerda
     lote('caja', 'maderaClara', -30, .95, pz, { rz: Math.PI / 2, esc: [.07, 11.6, .07], sombra: false });
   }
-  kit.colisionCirculo(-34, 8.1, .6);
+  kit.colisionCirculo(-34, 8.1, .6, .9);               // el cabrestante del muelle
   cil('madera', .42, .5, -34.2, .42, 8.1);                 // cabrestante
   cil('maderaClara', .3, .18, -34.2, .74, 8.1);
   for (let i = 0; i < 4; i++) {
@@ -322,7 +312,7 @@ export function buildPuerto(ctx) {
   for (const [px, pz, r] of [[-25.2, 9.2, .22], [-31.4, 9.2, .22]]) {   // norays
     cil('hierro', r, .34, px, .5, pz);
     lote('cil', 'hierro', px, .67, pz, { esc: [r * 2.6, .1, r * 2.6] });
-    kit.colisionCirculo(px, pz, r + .2);
+    kit.colisionCirculo(px, pz, r + .2, .8);           // noray: un cepo bajo, se pasa por encima
   }
   kit.barril(-26.6, 9.05, { alto: .78, r: .33 });
   kit.barril(-27.4, 8.95, { alto: .62, r: .3 });
@@ -382,5 +372,5 @@ export function buildPuerto(ctx) {
   }
   lote('cil', 'hierro', FX, 4.9, FZ, { esc: [1.0, .06, 1.0] });
   animar(t => { linterna.material.emissiveIntensity = Math.sin(t * 2.2) > .55 ? 2.4 : .15; });
-  kit.colisionCirculo(FX, FZ, .55);
+  kit.colisionCirculo(FX, FZ, .55, 6.3);               // la torre del faro hasta el remate
 }

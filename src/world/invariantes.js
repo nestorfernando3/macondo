@@ -7,7 +7,7 @@
 // `createVillage` guarda el resultado y el gancho de verificación lo expone.
 //
 // Cada problema lleva `check` (para filtrar) y `detalle` (para saber dónde).
-import { NODES, EDGES } from '../data/locations.js';
+import { NODES, EDGES, LOCATIONS, SPAWN } from '../data/locations.js';
 
 export const RADIO_JUGADOR = .32;   // radio de la mariposa, con holgura
 export const PASO_MUESTREO = .25;   // cada cuánto se muestrea una ruta
@@ -106,6 +106,51 @@ function encuentrosAlcanzables(world, encuentros) {
   return problemas;
 }
 
+// El vuelo es libre: ningún lugar puede quedar cercado por muros invisibles. Se vuela —sobre
+// el papel— desde el arranque a la altura del techo de las casas y se comprueba que los seis
+// lugares se alcanzan. Es la red que faltaba: la meseta del mirador estuvo cercada por dos
+// anillos de colisión que bloqueaban a cualquier altura, y el único camino era la rampa.
+export const ALTURA_VUELO_LIBRE = 7.5;   // sobre la cumbrera de las casas: el mando llega a 9
+const CELDA = .75;
+
+function vueloLibre(world) {
+  const L = world.limit, n = Math.floor((2 * L) / CELDA) + 1;
+  const idx = (i, j) => j * n + i;
+  const libre = new Uint8Array(n * n);
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const x = -L + i * CELDA, z = -L + j * CELDA;
+      libre[idx(i, j)] = world.blocks(x, z, RADIO_JUGADOR, ALTURA_VUELO_LIBRE) ? 0 : 1;
+    }
+  const visto = new Uint8Array(n * n), cola = [];
+  const casilla = (x, z) => [Math.round((x + L) / CELDA), Math.round((z + L) / CELDA)];
+  const [i0, j0] = casilla(SPAWN.x, SPAWN.z);
+  visto[idx(i0, j0)] = 1; cola.push([i0, j0]);
+  while (cola.length) {
+    const [i, j] = cola.pop();
+    for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const a = i + di, b = j + dj;
+      if (a < 0 || b < 0 || a >= n || b >= n) continue;
+      const k = idx(a, b);
+      if (visto[k] || !libre[k]) continue;
+      visto[k] = 1; cola.push([a, b]);
+    }
+  }
+  const problemas = [];
+  for (const id in LOCATIONS) {
+    const { x, z } = LOCATIONS[id];
+    let alcanzables = 0;
+    for (let dx = -1.5; dx <= 1.5; dx += CELDA)
+      for (let dz = -1.5; dz <= 1.5; dz += CELDA) {
+        const [i, j] = casilla(x + dx, z + dz);
+        if (i >= 0 && j >= 0 && i < n && j < n && visto[idx(i, j)]) alcanzables++;
+      }
+    if (alcanzables < 3)
+      problemas.push({ check: 'vuelo', detalle: `${id} (${x}, ${z}): sólo ${alcanzables} aproximaciones libres a ${ALTURA_VUELO_LIBRE} m` });
+  }
+  return problemas;
+}
+
 function vistaTapa(world) {
   const problemas = [];
   for (const v of VISTAS) {
@@ -125,6 +170,7 @@ export function verificarPueblo({ world, encuentros = [] }) {
     ...aguaYOrilla(world),
     ...vistaTapa(world),
     ...encuentrosAlcanzables(world, encuentros),
+    ...vueloLibre(world),
   ];
   return {
     problemas,
@@ -134,6 +180,7 @@ export function verificarPueblo({ world, encuentros = [] }) {
       puntosDeAgua: AGUA.length,
       vistas: VISTAS.length,
       encuentros: encuentros.length,
+      lugaresVolables: Object.keys(LOCATIONS).length,
     },
   };
 }

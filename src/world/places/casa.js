@@ -42,11 +42,18 @@ export function buildCasa(ctx) {
   }
   // Escalón del umbral y colisión de fachada (idénticas a la versión anterior).
   lote('caja', 'piedra', 0, .07, -10.75, { esc: [2.4, .14, .9] });
-  kit.colisionCaja(-3.7, -11.2, -.8, -10.8);
-  kit.colisionCaja(.8, -11.2, 3.7, -10.8);
-  kit.colisionCaja(-3.7, -19.3, -3.3, -10.8);
-  kit.colisionCaja(3.3, -19.3, 3.7, -10.8);
-  kit.colisionCaja(-3.7, -19.3, 3.7, -18.7);
+  // La casa bloquea hasta su cumbrera (3,2 de muro + 0,5 de alero + 2,5 de faldón): por
+  // encima del tejado la mariposa pasa volando; por debajo, la casa es la casa.
+  const TECHO = CH + .5 + 2.5 + .2;
+  kit.colisionCaja(-3.7, -11.2, -.8, -10.8, TECHO);
+  kit.colisionCaja(.8, -11.2, 3.7, -10.8, TECHO);
+  kit.colisionCaja(-3.7, -19.3, -3.3, -10.8, TECHO);
+  kit.colisionCaja(3.3, -19.3, 3.7, -10.8, TECHO);
+  kit.colisionCaja(-3.7, -19.3, 3.7, -18.7, TECHO);
+  // El tejado del patio es un sólido: bloquea de su base (el alero) a la cumbrera. Sin él, el
+  // patio era una habitación sin techo para el vuelo y para la cámara —que salía por encima y
+  // dejaba la pantalla en el color de la teja—, y la mariposa lo atravesaba al subir.
+  kit.colisionCaja(-4.15, -19.65, 4.15, -10.35, TECHO, CH + .5);
   // Los muros que dan a la calle también tapan la vista: el hueco de la puerta queda
   // transparente, así que desde el umbral sí se ve (y se explora) la mesa del patio.
   for (const [x1, z1, x2, z2] of [[-3.7, -11.2, -.8, -10.8], [.8, -11.2, 3.7, -10.8]]) {
@@ -88,8 +95,8 @@ export function buildCasa(ctx) {
     const [px, pz] = silla(lx, lz);
     lote('cil', 'madera', px, .22, pz, { esc: [.06, .44, .06] });
   }
-  kit.colisionCirculo(mesa.x + .82, mesa.z + .88, .25);
-  kit.colisionCirculo(mesa.x, mesa.z, .9);
+  kit.colisionCirculo(mesa.x + .82, mesa.z + .88, .25, .95);  // la silla del ancla
+  kit.colisionCirculo(mesa.x, mesa.z, .9, .85);               // la mesa: se pasa por encima
 
   // Mecedora del patio: piezas sueltas dentro de un grupo para poder mecerla entera.
   const mec = new THREE.Group();
@@ -104,7 +111,7 @@ export function buildCasa(ctx) {
     pieza(.05, .3, .05, px2, .3, pz2);
   pieza(.48, .05, .42, 0, .47, .02);
   pieza(.48, .52, .05, 0, .73, -.2, .12);
-  kit.colisionCirculo(2.4, -13.2, .42);
+  kit.colisionCirculo(2.4, -13.2, .42, .9);                   // la mecedora
   animar(t => { mec.rotation.x = Math.sin(t * 1.15) * .045; });
 
   // ---------- Sábanas que flotan sobre el tendal ----------
@@ -115,7 +122,8 @@ export function buildCasa(ctx) {
     sh.position.set(-2.4 + i * 2.3, 2.55, -17.8);
     scene.add(sh); sabanas.push(sh);
   }
-  kit.colisionCaja(-3.3, -17.95, 3.3, -17.15);                // impide pegar la cámara a las sábanas
+  // Impide pegar la cámara a las sábanas; por encima del cordel (3,4 m) se pasa volando.
+  kit.colisionCaja(-3.3, -17.95, 3.3, -17.15, 3.6);
   const cordel = cil('madera', .02, 6.6, 0, 3.42, -17.4);
   cordel.rotation.z = Math.PI / 2;
   animar(t => {

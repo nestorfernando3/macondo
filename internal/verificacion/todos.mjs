@@ -15,6 +15,8 @@ const rapido = process.argv.includes('--rapido');
 
 const GUIONES = [
   'cdp_fisica',      // muro, agua, fallback sin 3D e invariantes del pueblo
+  'cdp_altura',      // vuelo: mira, «Vista libre», altura con la mirada, mirador, móvil
+  'cdp_camara',      // la perseguidora no se mete en el pueblo ni en el tejado del patio
   'cdp_cancelar',    // detener, vuelo manual, volver a la plaza, puerta
   'cdp_lectura',     // lectura, respuesta, escritura, móvil 390×844
   'cdp_paquete1',    // las tres historias y su persistencia
@@ -25,6 +27,7 @@ const GUIONES = [
   'cdp_metricas',    // coste de dibujo por lugar + capturas
   'cdp_modelos',     // acercamiento a un metro: la pieza, no el encuadre
   'cdp_paneles',     // los paneles abren y ningún control sale con el gris del navegador
+  'cdp_novela',      // capa literaria: ficha, índice, árbol, palabras, pergamino y lluvia
   'cdp_rendimiento', // FPS del banco y presupuesto de llamadas
 ];
 if (!rapido) GUIONES.push('cdp_circuito');   // el más lento (recorrido guiado completo)
