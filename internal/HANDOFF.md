@@ -1,4 +1,82 @@
-# Entrega vigente · La guía traza por donde se puede volar (23 septiembre 2026)
+# Entrega vigente · La versión final, unificada y publicada en los dos destinos (23 septiembre 2026)
+
+Pedido: «unifica la versión final y sube a main, here.now y github pages». Tres cosas vivían
+separadas y aquí quedan en una: el árbol de trabajo tenía sin commitear las dos entregas de abajo
+—el mapa ilustrado y la guía que traza por donde de verdad se puede volar—, la rama
+`arena/01a0ccaa-macondo` tenía la infraestructura de publicación, y el sitio de here.now servía un
+build anterior. Commit: `4a9ab5b`.
+
+## Qué se unificó
+
+- **La infraestructura de despliegue entra a main.** De `arena/01a0ccaa-macondo`:
+  `.github/workflows/pages.yml` (npm ci + npm test + build + `actions/deploy-pages`),
+  `vite.config.js` (`base: './'`, para que el mismo `dist/` sirva bajo `/macondo/` y en la raíz,
+  más `preview.allowedHosts`) y el guion `npm test` en `package.json`. El disparador del flujo
+  queda **sólo en `main`**: antes también publicaba la rama arena, que ya no publica nada.
+- **Lo que NO se trajo de esa rama, con el motivo.**
+  - `internal/scripts/publicar_herenow.mjs`: crea un sitio **anónimo nuevo** en cada corrida
+    (expira en 24 h) y por tanto no puede republicar el enlace estable que ya está impreso en el
+    código QR de la guía docente. La publicación de aquí va sobre el slug `jade-bamboo-g745` con
+    el guion de here.now, que actualiza el sitio existente.
+  - La retirada del bloque «Acceso en línea» de `public/imprimibles/guia-docente.html` y el
+    borrado de `qr-here-now.png`/`.svg`: esa rama nació antes de `b91fb1d` y su copia no los
+    tenía. El QR apunta al slug estable, que sigue vivo, así que se conserva tal como está en
+    main.
+- **El árbol de trabajo entra en un solo commit**: el mapa ilustrado (`ui/Mapa.js`), el
+  planificador de rutas (`RoutePlanner`, `WalkableWorld.pathClear`, el escalón de 3,6 m y el aviso
+  cuando no hay camino), `tests/rutas.test.js`, `cdp_mapa.mjs` y `places/hielo.js` sin la
+  `PointLight`.
+
+## Verificación de esta entrega (corrida de hoy, árbol unificado)
+
+- `npm test`: **71/71**.
+- `npm run build`: OK, 59 módulos, JS **217,49 kB gzip** (el aviso de chunk >500 kB ya existía).
+- `node internal/verificacion/todos.mjs <OUT>`: **17/17 en verde** — incluidos `cdp_circuito`
+  (recorrido completo, 107,5 s) y `cdp_mapa` (25,6 s), cada guion con su Chrome y su perfil
+  propios. La corrida entera tardó 7 min 50 s.
+- **Humo del artefacto** (guion propio en la carpeta temporal, no entra al repo): `dist/` servido
+  como estático y cargado en Chrome. Las rutas relativas del build resuelven (los MP3, los
+  imprimibles y el QR dan 200), el mapa dibuja sus diez capas con los cinco lugares elegibles y
+  enfocables, elegir uno en el dibujo arranca el recorrido y la consola queda limpia. Es el caso
+  que los diecisiete guiones no cubren: ellos corren contra el servidor de desarrollo, y aquí lo
+  que se prueba es el artefacto publicado. El mismo guion se corrió **contra los dos sitios en
+  vivo** (`gh-pages` y here.now) con el mismo resultado.
+
+## Publicación
+
+| Destino | URL | Cómo se despliega | Comprobado |
+| --- | --- | --- | --- |
+| GitHub Pages | https://nestorfernando3.github.io/macondo/ | empuje a `main` → flujo `Publicar en GitHub Pages` | `index.html`, el JS y el CSS del sitio son **byte a byte** los del `dist/` local (sha256) |
+| here.now | https://jade-bamboo-g745.here.now/ | guion de here.now sobre el slug, tras `npm run build` | el JS servido tiene el mismo sha256 que el local; 30 de 31 archivos ya estaban (sólo subió lo que cambió) |
+
+- El flujo de Pages (corrida `35919507081`) pasó en 29 s: `construir` 18 s y `desplegar` 11 s.
+- **El hash del `index.html` de here.now NO coincide con el local a propósito**: here.now inyecta
+  sus propias etiquetas Open Graph y `twitter:card` en el HTML servido (266 bytes más). Los
+  assets —que son el producto— sí coinciden. No confundir eso con un despliegue viejo; la prueba
+  es el hash del JS.
+- Pages construye en el runner; here.now publica el `dist/` que hay en el árbol de trabajo. Si
+  hay trabajo sin commitear y se republica, ese trabajo entra al sitio: construir desde el árbol
+  limpio, o decir que va dentro.
+
+## Quirks que el siguiente no debe repetir
+
+- **`vite.config.js` cambió el build, no el desarrollo.** `base: './'` sólo afecta a `npm run
+  build`: las rutas del `dist/` pasan a ser relativas y por eso el mismo artefacto sirve en la
+  raíz y bajo `/macondo/`. Los diecisiete guiones CDP corren contra el servidor de desarrollo y
+  **no** cubrían ese cambio; el humo del artefacto existe por eso.
+- **La rama `arena/01a0ccaa-macondo` quedó sin uso** (su contenido útil está en main). Se puede
+  borrar cuando alguien quiera; hoy sigue en el remoto y ya no dispara despliegues.
+- **`.herenow/state.json` y `.commandcode/` siguen gitignored** — el primero lleva el enlace y el
+  `claimToken` del sitio, el segundo las reglas de permisos con la llave de Deepgram en claro. La
+  copia de la novela (`*.epub`) también queda fuera del repositorio público.
+- **Dos servidores de otras sesiones quedaron vivos y no se tocaron**: `npm run dev` en el puerto
+  por defecto (PID 54778) y `npm run dev -- --port 5175 --strictPort` (PID 3790), este último es
+  el que sirvió la batería CDP de esta entrega. No son de aquí: no se mataron a propósito.
+- **`npm test` es ahora la puerta del flujo de Pages.** Una prueba en rojo detiene el despliegue
+  —que es lo que se quiere—, pero también significa que un empuje a main puede quedar sin publicar
+  aunque el build esté bien. Mirar la pestaña Actions antes de dar por hecho que el sitio cambió.
+
+# Registro anterior · La guía traza por donde se puede volar (23 septiembre 2026)
 
 Pedido: «aquí tienes otra referencia, hecha por el mejor LLM del mundo, para seguir mejorando»
 (`macondo-3d-web-experience (2).zip`). Es la misma estirpe que el zip anterior —la generación
