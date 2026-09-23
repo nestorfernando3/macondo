@@ -34,7 +34,22 @@ y se re-verificó todo lo verificable en este entorno.
 ## Qué se cambió
 
 - `package.json`: se añadió el guion `"test": "node --test tests/*.test.js"` (el prompt exige
-  esa puerta en cada incremento y no existía como guion). Nada más se tocó del producto.
+  esa puerta en cada incremento y no existía como guion).
+- `vite.config.js` (nuevo): `preview.allowedHosts` (el preview respondía 403 tras un túnel) y
+  `base: './'` para publicación bajo subcamino. Ningún otro comportamiento cambia: audios e
+  imprimibles ya se referenciaban con `./` en el código.
+- `.github/workflows/pages.yml` (nuevo): publica en GitHub Pages (npm ci + npm test + build +
+  `actions/deploy-pages`), disparado por push a `main`/rama de trabajo o a mano.
+
+## Publicación en GitHub Pages (estado)
+
+El flujo corre en verde hasta el paso de Pages: checkout, `npm ci`, `npm test` (66/66) y build
+pasan en el runner; `configure-pages` falla porque el sitio Pages del repositorio aún no existe
+y ni el token de este entorno ni el GITHUB_TOKEN del flujo tienen permiso de administración para
+crearlo (HTTP 403 «Resource not accessible by integration»). Falta un solo clic del dueño del repo:
+**Settings → Pages → Build and deployment → Source: «GitHub Actions»**. Hecho eso, relanzar con
+`gh run re-run <run> --failed` o desde la pestaña Actions; la URL quedará en
+`https://nestorfernando3.github.io/macondo/`.
 
 ## Limitación de este entorno (no del producto)
 
