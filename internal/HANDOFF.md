@@ -1,3 +1,59 @@
+# Entrega vigente · Auditoría de regeneración: el paseo completo, verificado en verde (23 septiembre 2026)
+
+Se recibió el prompt de regeneración (`docs/PROMPT-REGENERAR-MACONDO.md`) sobre el árbol ya
+entregado. En vez de reconstruir y perder lo que este repo tiene de irreemplazable (los 21 MP3
+pregenerados con Deepgram —la llave no está en este entorno—, el ajuste de colisiones de cámara
+y la batería de 66 pruebas), se auditó la entrega vigente contra el prompt sección por sección
+y se re-verificó todo lo verificable en este entorno.
+
+## Qué se verificó (y quedó en verde)
+
+- **§1 Estructura y técnica:** Vite 6.3.6 + Three.js 0.180.0, ESM, sin frameworks ni TS; todos
+  los módulos esperados existen (incluidos `Locomocion`, `anclas`, `invariantes`,
+  `storyEffects`, `postal`, `beacon`). Arte 100 % procedural; texturas pintadas en canvas.
+- **§2 Contenido:** textos pedagógicos originales; la única transcripción literal es la
+  ascensión de Remedios, la bella (capítulo 12), en `blockquote` + `cite` con el rótulo
+  «Del libro», separada de la glosa y fuera de la narración hablada (`lectura-remedios` lleva
+  solo título + glosa). La interpretación artística está declarada en el README.
+- **§3–§4 Mundo y mecánicas:** cubiertos por la batería Node (grafo transitable, ninguna casa
+  roza un camino, alturas 2,1 / 2,45 / 5,1 m, agua que no se cruza y muelle que sí, sin
+  matrices NaN en las familias instanciadas con y sin `prefers-reduced-motion`).
+- **§5 Contenido pedagógico:** 8 estaciones del encargo + 2 añadidas por la capa literaria
+  (`hielo`, `pescaditos`); 6 hallazgos; paquetes 1 y 2 de historias; cuaderno de tres frases;
+  claves de persistencia exactas (`macondo.progreso.v1`, `macondo.escritura.v1`,
+  `macondo.historias.v1`, `macondo-hallazgos-v1`, `macondo.voz.v1`).
+- **§6 Voz:** manifiesto de 21 clips, 21 MP3 presentes en `public/audio/`; ambiente
+  (viento/río/aves) sintetizado por guion propio.
+- **§10 Pruebas:** `node --test tests/*.test.js` → **66/66**. `npm run build` → limpio
+  (JS 214,89 kB gzip; el aviso de chunk >500 kB es cosmético y está documentado).
+- **Presupuesto medido hoy** (`node internal/scripts/pesar_escena.mjs`): **149 373 triángulos
+  y 410 mallas** (272 sueltas, 138 instanciadas). Sigue dentro del tope de 150 000, pero el
+  margen quedó en ~0,4 %: la próxima pieza que se añadre debe pagar su propio presupuesto o
+  recortar otra.
+
+## Qué se cambió
+
+- `package.json`: se añadió el guion `"test": "node --test tests/*.test.js"` (el prompt exige
+  esa puerta en cada incremento y no existía como guion). Nada más se tocó del producto.
+
+## Limitación de este entorno (no del producto)
+
+Este espacio de trabajo no permite descargar binarios de navegador (sólo responde
+`registry.npmjs.org`; `storage.googleapis.com`, `cdn.npmmirror.com` y `playwright.azureedge.net`
+cortan la conexión), y `internal/verificacion/arnes.mjs` apunta al Chrome de macOS. La batería
+CDP (recorrido 4/4, física, lecturas, gate de «Continuar», vista móvil 390×844…) queda por tanto
+sin re-corregir aquí; las evidencias vigentes son las de las carpetas `internal/*-evidencia/`
+y las pruebas Node de esta entrega. Quien tenga Chrome a mano:
+`npm run dev -- --port 5175 --strictPort` y luego `node internal/verificacion/todos.mjs`.
+
+## Quirks que hereda el siguiente
+
+- El manojo creció a 214,89 kB gzip sobre la referencia de ~190: la diferencia es la capa
+  literaria (novela/árbol/palabras/hielo/pescaditos). Si se pide volver a la referencia,
+  recórtense esos módulos, no el pueblo.
+- El presupuesto de triángulos está a 627 del tope (ver arriba).
+- No regenerar los MP3 sin llave de Deepgram: `internal/audio/deepgram.key` está gitignored y
+  el entorno actual no la tiene; la experiencia funciona completa con subtítulos.
 # Entrega vigente · La cámara no atraviesa el pueblo y el patio tiene techo (23 septiembre 2026)
 
 Continúa la entrega del vuelo (el ratón gira, WASD vuela, ningún lugar queda cercado). El
