@@ -6,3 +6,7 @@ internal/audio/deepgram.key
 # llave de Deepgram en claro: es la misma que este archivo mantiene fuera del control de
 # versiones, así que la carpeta entera queda fuera. Nunca se publica.
 .commandcode/
+# Estado local de here.now (enlace y token de reclamo del sitio publicado): nunca se publica.
+.herenow/
+# Copia de consulta de la novela: se queda en el equipo, fuera del repositorio público.
+*.epub
